@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>States & Provinces Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <h1>🗺️ States & Provinces Game</h1>
+            <div class="controls-row">
+                <div class="mode-selector">
+                    <button id="us-mode" class="mode-btn active">🇺🇸 US States</button>
+                    <button id="canada-mode" class="mode-btn">🇨🇦 Canadian Provinces</button>
+                    <button id="both-mode" class="mode-btn">🌎 Both</button>
+                </div>
+                <div class="toggle-controls">
+                    <button id="sound-toggle" class="sound-toggle" title="Toggle Sound">🔊</button>
+                    <button id="voice-toggle" class="voice-toggle" title="Toggle Voice">🗣️</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="game-main">
+            <div class="game-info">
+                <div class="score">Score: <span id="score">0</span></div>
+                <div class="progress">Progress: <span id="current">0</span> / <span id="total">0</span></div>
+                <button id="start-btn" class="start-btn">Start Game</button>
+            </div>
+
+            <div id="game-area" class="game-area hidden">
+                <div class="question">
+                    <h2>What is the highlighted state/province?</h2>
+                </div>
+                
+                <div class="map-container">
+                    <div id="map-wrapper"></div>
+                </div>
+
+                <div class="answer-section">
+                    <div class="options" id="options"></div>
+                    <div class="feedback" id="feedback"></div>
+                    <button id="next-btn" class="next-btn hidden">Next →</button>
+                </div>
+            </div>
+
+            <div id="game-complete" class="game-complete hidden">
+                <h2>🎉 Congratulations!</h2>
+                <p>You completed the game!</p>
+                <p>Final Score: <span id="final-score">0</span></p>
+                <button id="play-again-btn" class="play-again-btn">Play Again</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="sounds.js"></script>
+    <script src="voice.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
