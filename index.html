@@ -25,12 +25,36 @@
 
         <main class="game-main">
             <div class="game-info">
-                <div class="score">Score: <span id="score">0</span></div>
-                <div class="progress">Progress: <span id="current">0</span> / <span id="total">0</span></div>
+                <div class="scoreboard">
+                    <div class="score-item correct-score">
+                        <div class="score-number" id="correct-count">0</div>
+                        <div class="score-label">✅ Correct</div>
+                    </div>
+                    <div class="score-item wrong-score">
+                        <div class="score-number" id="wrong-count">0</div>
+                        <div class="score-label">❌ Wrong</div>
+                    </div>
+                    <div class="score-item remaining-score">
+                        <div class="score-number" id="remaining-count">0</div>
+                        <div class="score-label">🔄 Remaining</div>
+                    </div>
+                </div>
                 <button id="start-btn" class="start-btn">Start Game</button>
             </div>
 
             <div id="game-area" class="game-area hidden">
+                <div class="scoreboard-mini">
+                    <div class="mini-score-item">
+                        <span class="mini-number" id="correct-mini">0</span>✅
+                    </div>
+                    <div class="mini-score-item">
+                        <span class="mini-number" id="wrong-mini">0</span>❌
+                    </div>
+                    <div class="mini-score-item">
+                        <span class="mini-number" id="remaining-mini">0</span>🔄
+                    </div>
+                </div>
+                
                 <div class="question">
                     <h2>What is the highlighted state/province?</h2>
                 </div>
@@ -49,7 +73,26 @@
             <div id="game-complete" class="game-complete hidden">
                 <h2>🎉 Congratulations!</h2>
                 <p>You completed the game!</p>
-                <p>Final Score: <span id="final-score">0</span></p>
+                
+                <div class="final-scoreboard">
+                    <div class="final-score-item final-correct">
+                        <div class="final-score-number" id="final-correct">0</div>
+                        <div class="final-score-label">✅ Correct</div>
+                    </div>
+                    <div class="final-score-item final-wrong">
+                        <div class="final-score-number" id="final-wrong">0</div>
+                        <div class="final-score-label">❌ Wrong</div>
+                    </div>
+                    <div class="final-score-item final-total">
+                        <div class="final-score-number" id="final-total">0</div>
+                        <div class="final-score-label">📋 Total</div>
+                    </div>
+                </div>
+                
+                <div class="final-percentage">
+                    <span id="final-percentage">0</span>% Accuracy
+                </div>
+                
                 <button id="play-again-btn" class="play-again-btn">Play Again</button>
             </div>
         </main>

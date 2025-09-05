@@ -118,11 +118,81 @@ body {
     margin-bottom: 30px;
 }
 
-.score, .progress {
-    font-size: 1.3rem;
+/* Main Scoreboard */
+.scoreboard {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.score-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px;
+    border-radius: 15px;
+    min-width: 100px;
+    transition: all 0.3s ease;
+}
+
+.correct-score {
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+    color: white;
+}
+
+.wrong-score {
+    background: linear-gradient(135deg, #d63031 0%, #e84393 100%);
+    color: white;
+}
+
+.remaining-score {
+    background: linear-gradient(135deg, #74b9ff 0%, #a29bfe 100%);
+    color: white;
+}
+
+.score-number {
+    font-size: 2.5rem;
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.score-label {
+    font-size: 0.9rem;
     font-weight: bold;
-    color: #2d3436;
-    margin: 10px 0;
+    opacity: 0.9;
+}
+
+/* Mini Scoreboard for Game Area */
+.scoreboard-mini {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.mini-score-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.5);
+    font-weight: bold;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.mini-number {
+    font-size: 1.3rem;
+    font-weight: 900;
 }
 
 .start-btn, .play-again-btn {
@@ -290,8 +360,61 @@ body {
 
 .game-complete p {
     font-size: 1.3rem;
-    margin: 15px 0;
+    margin: 15px 0 30px 0;
     color: #2d3436;
+}
+
+/* Final Scoreboard */
+.final-scoreboard {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin: 30px 0;
+    flex-wrap: wrap;
+}
+
+.final-score-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    border-radius: 15px;
+    min-width: 100px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.final-correct {
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+}
+
+.final-wrong {
+    background: linear-gradient(135deg, #d63031 0%, #e84393 100%);
+}
+
+.final-total {
+    background: linear-gradient(135deg, #74b9ff 0%, #a29bfe 100%);
+}
+
+.final-score-number {
+    font-size: 2.2rem;
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.final-score-label {
+    font-size: 0.9rem;
+    font-weight: bold;
+    opacity: 0.9;
+}
+
+.final-percentage {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #00b894;
+    margin: 20px 0 30px 0;
+    text-align: center;
 }
 
 /* Utility Classes */
@@ -322,6 +445,50 @@ body {
     .toggle-controls {
         align-self: center;
         justify-content: center;
+    }
+    
+    .scoreboard {
+        gap: 20px;
+    }
+    
+    .score-item {
+        min-width: 80px;
+        padding: 12px;
+    }
+    
+    .score-number {
+        font-size: 2rem;
+    }
+    
+    .scoreboard-mini {
+        gap: 15px;
+        padding: 12px;
+    }
+    
+    .mini-score-item {
+        padding: 6px 10px;
+        font-size: 1rem;
+    }
+    
+    .mini-number {
+        font-size: 1.2rem;
+    }
+    
+    .final-scoreboard {
+        gap: 15px;
+    }
+    
+    .final-score-item {
+        min-width: 80px;
+        padding: 15px;
+    }
+    
+    .final-score-number {
+        font-size: 1.8rem;
+    }
+    
+    .final-percentage {
+        font-size: 1.5rem;
     }
     
     .options {

@@ -4,7 +4,8 @@
 class StatesGame {
     constructor() {
         this.currentMode = 'us';
-        this.score = 0;
+        this.correctAnswers = 0;
+        this.wrongAnswers = 0;
         this.currentQuestion = 0;
         this.questions = [];
         this.svgElement = null;
@@ -42,6 +43,7 @@ class StatesGame {
     init() {
         this.loadSVG();
         this.setupEventListeners();
+        this.updateScoreboard();
     }
     
     async loadSVG() {
@@ -177,6 +179,20 @@ class StatesGame {
         });
     }
     
+    updateScoreboard() {
+        const remaining = this.questions.length - this.currentQuestion;
+        
+        // Update main scoreboard (pre-game screen)
+        document.getElementById('correct-count').textContent = this.correctAnswers;
+        document.getElementById('wrong-count').textContent = this.wrongAnswers;
+        document.getElementById('remaining-count').textContent = remaining;
+        
+        // Update mini scoreboard (in-game)
+        document.getElementById('correct-mini').textContent = this.correctAnswers;
+        document.getElementById('wrong-mini').textContent = this.wrongAnswers;
+        document.getElementById('remaining-mini').textContent = remaining;
+    }
+    
     setMode(mode) {
         this.currentMode = mode;
         
@@ -188,13 +204,12 @@ class StatesGame {
     startGame() {
         this.sounds.playGameStart();
         
-        this.score = 0;
+        this.correctAnswers = 0;
+        this.wrongAnswers = 0;
         this.currentQuestion = 0;
         this.generateQuestions();
         
-        document.getElementById('score').textContent = this.score;
-        document.getElementById('current').textContent = this.currentQuestion + 1;
-        document.getElementById('total').textContent = this.questions.length;
+        this.updateScoreboard();
         
         document.querySelector('.game-info').classList.add('hidden');
         document.getElementById('game-area').classList.remove('hidden');
@@ -251,8 +266,8 @@ class StatesGame {
         // Generate answer options
         this.generateOptions(question);
         
-        // Update progress
-        document.getElementById('current').textContent = this.currentQuestion + 1;
+        // Update scoreboard
+        this.updateScoreboard();
         
         // Hide feedback and next button
         document.getElementById('feedback').innerHTML = '';
@@ -317,14 +332,20 @@ class StatesGame {
             }
         });
         
+        // Track answers and update scoreboard
+        if (isCorrect) {
+            this.correctAnswers++;
+        } else {
+            this.wrongAnswers++;
+        }
+        this.updateScoreboard();
+        
         // Show feedback with sound and voice
         const feedback = document.getElementById('feedback');
         if (isCorrect) {
             this.sounds.playCorrect();
             this.voice.speakCorrect(correctAnswer);
             feedback.innerHTML = '<span class="correct-feedback">✅ Correct!</span>';
-            this.score++;
-            document.getElementById('score').textContent = this.score;
         } else {
             this.sounds.playIncorrect();
             this.voice.speakIncorrect(correctAnswer);
@@ -361,9 +382,19 @@ class StatesGame {
     endGame() {
         this.sounds.playGameComplete();
         
+        // Calculate percentage
+        const percentage = this.questions.length > 0 
+            ? Math.round((this.correctAnswers / this.questions.length) * 100) 
+            : 0;
+        
+        // Update final scoreboard
+        document.getElementById('final-correct').textContent = this.correctAnswers;
+        document.getElementById('final-wrong').textContent = this.wrongAnswers;
+        document.getElementById('final-total').textContent = this.questions.length;
+        document.getElementById('final-percentage').textContent = percentage;
+        
         document.getElementById('game-area').classList.add('hidden');
         document.getElementById('game-complete').classList.remove('hidden');
-        document.getElementById('final-score').textContent = `${this.score} / ${this.questions.length}`;
         
         this.resetMapColors();
     }
@@ -372,6 +403,12 @@ class StatesGame {
         document.getElementById('game-complete').classList.add('hidden');
         document.querySelector('.game-info').classList.remove('hidden');
         document.getElementById('start-btn').textContent = 'Play Again';
+        
+        // Reset scoreboard for next game
+        this.correctAnswers = 0;
+        this.wrongAnswers = 0;
+        this.currentQuestion = 0;
+        this.updateScoreboard();
         
         this.resetMapColors();
     }
