@@ -253,18 +253,27 @@ class StatesGame {
     updateScoreboard() {
         const remaining = this.questions.length - this.currentQuestion;
         
-        // Helper function to safely update text content
-        const safeUpdateText = (id, text) => {
+        // Helper function to safely update text content with animation
+        const safeUpdateTextWithAnimation = (id, text) => {
             const element = document.getElementById(id);
             if (element) {
+                const oldValue = element.textContent;
                 element.textContent = text;
+                
+                // Add pulse animation if value changed
+                if (oldValue !== text) {
+                    element.classList.add('updated');
+                    setTimeout(() => {
+                        element.classList.remove('updated');
+                    }, 600);
+                }
             }
         };
         
-        // Update toolbar scoreboard (always visible)
-        safeUpdateText('correct-display', this.correctAnswers);
-        safeUpdateText('wrong-display', this.wrongAnswers);
-        safeUpdateText('remaining-display', remaining);
+        // Update toolbar scoreboard (always visible) with animations
+        safeUpdateTextWithAnimation('correct-display', this.correctAnswers);
+        safeUpdateTextWithAnimation('wrong-display', this.wrongAnswers);
+        safeUpdateTextWithAnimation('remaining-display', remaining);
     }
     
     

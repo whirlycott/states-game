@@ -65,52 +65,110 @@ class EdgeyVoice {
     selectBestVoice() {
         const voices = this.synth.getVoices();
         
-        // Prefer male voices with lower pitch for edgy character
-        const preferredVoices = [
-            'Microsoft David - English (United States)',
-            'Alex',
+        // Debug: log all available voices
+        console.log('Available voices:');
+        voices.forEach(voice => {
+            console.log(`- ${voice.name} (${voice.lang})`);
+        });
+        
+        // Filter for clear English voices only (US, UK, AU, CA)
+        const englishVoices = voices.filter(voice => {
+            const lang = voice.lang.toLowerCase();
+            const name = voice.name.toLowerCase();
+            
+            // Must be English language
+            const isEnglish = lang.startsWith('en-us') || 
+                            lang.startsWith('en-gb') || 
+                            lang.startsWith('en-au') || 
+                            lang.startsWith('en-ca') ||
+                            lang === 'en';
+            
+            // Must NOT contain German indicators
+            const isNotGerman = !name.includes('deutsch') && 
+                              !name.includes('german') && 
+                              !lang.includes('de') &&
+                              !lang.includes('deutsch');
+            
+            return isEnglish && isNotGerman;
+        });
+        
+        console.log('Filtered English voices:');
+        englishVoices.forEach(voice => {
+            console.log(`- ${voice.name} (${voice.lang})`);
+        });
+        
+        // Prefer specific clear English voices (exact matches first)
+        const preferredVoiceNames = [
+            'Alex',                                    // macOS US English
+            'Samantha',                               // macOS US English female
+            'Microsoft David Desktop',               // Windows US English
+            'Microsoft Mark Desktop',               // Windows US English  
+            'Google US English',
             'Google US English Male',
-            'Daniel',
-            'Microsoft Mark - English (United States)',
-            'Fred',
-            'Ralph'
+            'US English Male',
+            'English United States'
         ];
         
-        // Try to find a preferred voice
-        for (const prefName of preferredVoices) {
-            const found = voices.find(voice => 
-                voice.name.includes(prefName.split(' ')[0]) || 
+        // Try exact name matches first
+        for (const prefName of preferredVoiceNames) {
+            const found = englishVoices.find(voice => 
                 voice.name === prefName
             );
             if (found) {
                 this.voice = found;
-                console.log(`Selected voice: ${found.name}`);
+                console.log(`Selected exact match voice: ${found.name} (${found.lang})`);
                 return;
             }
         }
         
-        // Fallback to any male voice
-        const maleVoice = voices.find(voice => 
+        // Try partial name matches
+        for (const prefName of preferredVoiceNames) {
+            const found = englishVoices.find(voice => 
+                voice.name.includes(prefName)
+            );
+            if (found) {
+                this.voice = found;
+                console.log(`Selected partial match voice: ${found.name} (${found.lang})`);
+                return;
+            }
+        }
+        
+        // Fallback to any clear English male voice
+        const englishMaleVoice = englishVoices.find(voice => 
             voice.name.toLowerCase().includes('male') ||
             voice.name.toLowerCase().includes('david') ||
             voice.name.toLowerCase().includes('alex') ||
-            voice.name.toLowerCase().includes('daniel')
+            voice.name.toLowerCase().includes('daniel') ||
+            voice.name.toLowerCase().includes('mark')
         );
         
-        if (maleVoice) {
-            this.voice = maleVoice;
-            console.log(`Selected fallback male voice: ${maleVoice.name}`);
+        if (englishMaleVoice) {
+            this.voice = englishMaleVoice;
+            console.log(`Selected English male voice: ${englishMaleVoice.name} (${englishMaleVoice.lang})`);
             return;
         }
         
-        // Last resort - any English voice
-        const englishVoice = voices.find(voice => 
-            voice.lang.startsWith('en')
-        );
+        // Try the first available English voice from our filtered list
+        if (englishVoices.length > 0) {
+            // Sort by preference: US English first, then others
+            const sortedVoices = englishVoices.sort((a, b) => {
+                if (a.lang.startsWith('en-US') && !b.lang.startsWith('en-US')) return -1;
+                if (!a.lang.startsWith('en-US') && b.lang.startsWith('en-US')) return 1;
+                return 0;
+            });
+            
+            this.voice = sortedVoices[0];
+            console.log(`Selected first English voice: ${this.voice.name} (${this.voice.lang})`);
+            return;
+        }
         
-        this.voice = englishVoice || voices[0];
+        // If no English voices found, log warning and use default
+        console.warn('No clear English voices found! Using default voice.');
+        this.voice = voices[0];
         if (this.voice) {
-            console.log(`Selected voice: ${this.voice.name}`);
+            console.log(`WARNING - Using default voice: ${this.voice.name} (${this.voice.lang})`);
+        } else {
+            console.error('No voices available at all!');
         }
     }
     
