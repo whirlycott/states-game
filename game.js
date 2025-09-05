@@ -3,7 +3,7 @@
 
 class StatesGame {
     constructor() {
-        this.currentMode = 'us';
+        this.currentMode = null; // Must be selected before starting
         this.correctAnswers = 0;
         this.wrongAnswers = 0;
         this.currentQuestion = 0;
@@ -11,6 +11,7 @@ class StatesGame {
         this.svgElement = null;
         this.sounds = new RetroSounds();
         this.voice = new EdgeyVoice();
+        this.gameStarted = false;
         
         // State/Province data mapping
         this.usStates = {
@@ -122,46 +123,63 @@ class StatesGame {
     }
     
     setupEventListeners() {
-        // Mode selection with sound
-        document.getElementById('us-mode').addEventListener('click', () => {
+        // Helper function to safely add event listener
+        const safeAddListener = (id, event, callback) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener(event, callback);
+            } else {
+                console.warn(`Element with id '${id}' not found`);
+            }
+        };
+        
+        // Mode selection buttons
+        safeAddListener('select-us', 'click', () => {
             this.sounds.playButtonHover();
-            this.setMode('us');
+            this.selectMode('us');
         });
-        document.getElementById('canada-mode').addEventListener('click', () => {
+        safeAddListener('select-canada', 'click', () => {
             this.sounds.playButtonHover();
-            this.setMode('canada');
+            this.selectMode('canada');
         });
-        document.getElementById('both-mode').addEventListener('click', () => {
+        safeAddListener('select-both', 'click', () => {
             this.sounds.playButtonHover();
-            this.setMode('both');
+            this.selectMode('both');
         });
         
-        // Game controls with sound
-        document.getElementById('start-btn').addEventListener('click', () => this.startGame());
-        document.getElementById('next-btn').addEventListener('click', () => {
+        // Game controls
+        safeAddListener('start-btn', 'click', () => this.startGame());
+        safeAddListener('next-btn', 'click', () => {
             this.sounds.playNextQuestion();
             this.nextQuestion();
         });
-        document.getElementById('play-again-btn').addEventListener('click', () => {
+        safeAddListener('play-again-btn', 'click', () => {
             this.sounds.playButtonHover();
             this.resetGame();
         });
-        
-        // Sound toggle
-        document.getElementById('sound-toggle').addEventListener('click', () => {
-            const isEnabled = this.sounds.toggleSound();
-            const button = document.getElementById('sound-toggle');
-            button.textContent = isEnabled ? '🔊' : '🔇';
-            button.classList.toggle('muted', !isEnabled);
-            if (isEnabled) this.sounds.playButtonHover();
+        safeAddListener('back-to-menu', 'click', () => {
+            this.sounds.playButtonHover();
+            this.backToMenu();
         });
         
-        // Voice toggle
-        document.getElementById('voice-toggle').addEventListener('click', () => {
+        // Control buttons (always visible)
+        safeAddListener('sound-toggle', 'click', () => {
+            const isEnabled = this.sounds.toggleSound();
+            const button = document.getElementById('sound-toggle');
+            if (button) {
+                button.textContent = isEnabled ? '🔊' : '🔇';
+                button.classList.toggle('muted', !isEnabled);
+                if (isEnabled) this.sounds.playButtonHover();
+            }
+        });
+        
+        safeAddListener('voice-toggle', 'click', () => {
             const isEnabled = this.voice.toggle();
             const button = document.getElementById('voice-toggle');
-            button.textContent = isEnabled ? '🗣️' : '🤐';
-            button.classList.toggle('muted', !isEnabled);
+            if (button) {
+                button.textContent = isEnabled ? '🗣️' : '🤐';
+                button.classList.toggle('muted', !isEnabled);
+            }
         });
         
         // Add hover sounds to buttons
@@ -169,40 +187,92 @@ class StatesGame {
     }
     
     addButtonHoverSounds() {
-        const buttons = document.querySelectorAll('button');
-        buttons.forEach(button => {
-            button.addEventListener('mouseenter', () => {
-                if (button.id !== 'sound-toggle') {
-                    this.sounds.playButtonHover();
+        // Wait a bit to ensure DOM is ready
+        setTimeout(() => {
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                if (button && typeof button.addEventListener === 'function') {
+                    button.addEventListener('mouseenter', () => {
+                        if (!button.id.includes('toggle')) {
+                            this.sounds.playButtonHover();
+                        }
+                    });
                 }
             });
-        });
+        }, 100);
+    }
+    
+    selectMode(mode) {
+        this.currentMode = mode;
+        this.showGameInterface();
+    }
+    
+    showGameInterface() {
+        const modeSelection = document.getElementById('mode-selection');
+        const gameInterface = document.getElementById('game-interface');
+        
+        if (modeSelection) modeSelection.classList.add('hidden');
+        if (gameInterface) gameInterface.classList.remove('hidden');
+        
+        this.updateScoreboard();
+    }
+    
+    backToMenu() {
+        this.gameStarted = false;
+        this.currentMode = null;
+        this.resetMapColors();
+        this.resetZoom();
+        
+        // Hide game interface and show mode selection
+        const gameInterface = document.getElementById('game-interface');
+        const modeSelection = document.getElementById('mode-selection');
+        
+        if (gameInterface) gameInterface.classList.add('hidden');
+        if (modeSelection) modeSelection.classList.remove('hidden');
+        
+        // Reset game state
+        this.correctAnswers = 0;
+        this.wrongAnswers = 0;
+        this.currentQuestion = 0;
+        this.questions = [];
+        
+        // Reset UI elements safely
+        const startBtn = document.getElementById('start-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const feedback = document.getElementById('feedback');
+        const options = document.getElementById('options');
+        
+        if (startBtn) startBtn.classList.remove('hidden');
+        if (nextBtn) nextBtn.classList.add('hidden');
+        if (playAgainBtn) playAgainBtn.classList.add('hidden');
+        if (feedback) feedback.innerHTML = '';
+        if (options) options.innerHTML = '';
     }
     
     updateScoreboard() {
         const remaining = this.questions.length - this.currentQuestion;
         
-        // Update main scoreboard (pre-game screen)
-        document.getElementById('correct-count').textContent = this.correctAnswers;
-        document.getElementById('wrong-count').textContent = this.wrongAnswers;
-        document.getElementById('remaining-count').textContent = remaining;
+        // Helper function to safely update text content
+        const safeUpdateText = (id, text) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = text;
+            }
+        };
         
-        // Update mini scoreboard (in-game)
-        document.getElementById('correct-mini').textContent = this.correctAnswers;
-        document.getElementById('wrong-mini').textContent = this.wrongAnswers;
-        document.getElementById('remaining-mini').textContent = remaining;
+        // Update toolbar scoreboard (always visible)
+        safeUpdateText('correct-display', this.correctAnswers);
+        safeUpdateText('wrong-display', this.wrongAnswers);
+        safeUpdateText('remaining-display', remaining);
     }
     
-    setMode(mode) {
-        this.currentMode = mode;
-        
-        // Update UI
-        document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById(`${mode}-mode`).classList.add('active');
-    }
     
     startGame() {
+        if (!this.currentMode) return; // Safety check
+        
         this.sounds.playGameStart();
+        this.gameStarted = true;
         
         this.correctAnswers = 0;
         this.wrongAnswers = 0;
@@ -211,11 +281,19 @@ class StatesGame {
         
         this.updateScoreboard();
         
+        // Hide start button, clear any previous game state
+        const startBtn = document.getElementById('start-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const feedback = document.getElementById('feedback');
+        
+        if (startBtn) startBtn.classList.add('hidden');
+        if (nextBtn) nextBtn.classList.add('hidden');
+        if (playAgainBtn) playAgainBtn.classList.add('hidden');
+        if (feedback) feedback.innerHTML = '';
+        
         // Reset zoom to show full map initially
         this.resetZoom();
-        
-        document.querySelector('.game-info').classList.add('hidden');
-        document.getElementById('game-area').classList.remove('hidden');
         
         // Delay showing first question to allow zoom reset animation
         setTimeout(() => {
@@ -516,20 +594,32 @@ class StatesGame {
     
     endGame() {
         this.sounds.playGameComplete();
+        this.gameStarted = false;
         
         // Calculate percentage
         const percentage = this.questions.length > 0 
             ? Math.round((this.correctAnswers / this.questions.length) * 100) 
             : 0;
         
-        // Update final scoreboard
-        document.getElementById('final-correct').textContent = this.correctAnswers;
-        document.getElementById('final-wrong').textContent = this.wrongAnswers;
-        document.getElementById('final-total').textContent = this.questions.length;
-        document.getElementById('final-percentage').textContent = percentage;
+        // Show completion feedback
+        const feedbackElement = document.getElementById('feedback');
+        feedbackElement.innerHTML = `
+            <div style="text-align: center; padding: 20px;">
+                <h2 style="color: #00b894; margin-bottom: 15px;">🎉 Game Complete!</h2>
+                <p style="font-size: 1.2rem; margin-bottom: 10px;">
+                    ${this.correctAnswers} / ${this.questions.length} correct (${percentage}%)
+                </p>
+            </div>
+        `;
         
-        document.getElementById('game-area').classList.add('hidden');
-        document.getElementById('game-complete').classList.remove('hidden');
+        // Clear options and show play again button
+        const options = document.getElementById('options');
+        const nextBtn = document.getElementById('next-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        
+        if (options) options.innerHTML = '';
+        if (nextBtn) nextBtn.classList.add('hidden');
+        if (playAgainBtn) playAgainBtn.classList.remove('hidden');
         
         // Reset map colors and zoom
         this.resetMapColors();
@@ -537,14 +627,26 @@ class StatesGame {
     }
     
     resetGame() {
-        document.getElementById('game-complete').classList.add('hidden');
-        document.querySelector('.game-info').classList.remove('hidden');
-        document.getElementById('start-btn').textContent = 'Play Again';
-        
-        // Reset scoreboard for next game
+        // Reset game state
         this.correctAnswers = 0;
         this.wrongAnswers = 0;
         this.currentQuestion = 0;
+        this.gameStarted = false;
+        this.questions = [];
+        
+        // Reset UI safely
+        const startBtn = document.getElementById('start-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const feedback = document.getElementById('feedback');
+        const options = document.getElementById('options');
+        
+        if (startBtn) startBtn.classList.remove('hidden');
+        if (nextBtn) nextBtn.classList.add('hidden');
+        if (playAgainBtn) playAgainBtn.classList.add('hidden');
+        if (feedback) feedback.innerHTML = '';
+        if (options) options.innerHTML = '';
+        
         this.updateScoreboard();
         
         // Reset map colors and zoom

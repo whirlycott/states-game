@@ -7,95 +7,81 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="game-container">
-        <header class="game-header">
+    <!-- Mode Selection Screen -->
+    <div id="mode-selection" class="mode-selection">
+        <div class="mode-selection-content">
             <h1>🗺️ States & Provinces Game</h1>
-            <div class="controls-row">
-                <div class="mode-selector">
-                    <button id="us-mode" class="mode-btn active">🇺🇸 US States</button>
-                    <button id="canada-mode" class="mode-btn">🇨🇦 Canadian Provinces</button>
-                    <button id="both-mode" class="mode-btn">🌎 Both</button>
-                </div>
-                <div class="toggle-controls">
-                    <button id="sound-toggle" class="sound-toggle" title="Toggle Sound">🔊</button>
-                    <button id="voice-toggle" class="voice-toggle" title="Toggle Voice">🗣️</button>
+            <p>Choose your game mode to begin:</p>
+            <div class="mode-buttons">
+                <button id="select-us" class="mode-select-btn">
+                    <span class="mode-icon">🇺🇸</span>
+                    <span class="mode-title">US States</span>
+                    <span class="mode-description">50 States + DC</span>
+                </button>
+                <button id="select-canada" class="mode-select-btn">
+                    <span class="mode-icon">🇨🇦</span>
+                    <span class="mode-title">Canadian Provinces</span>
+                    <span class="mode-description">13 Provinces & Territories</span>
+                </button>
+                <button id="select-both" class="mode-select-btn">
+                    <span class="mode-icon">🌎</span>
+                    <span class="mode-title">Both Combined</span>
+                    <span class="mode-description">All Regions</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Game Interface -->
+    <div id="game-interface" class="game-interface hidden">
+        <!-- Top Toolbar -->
+        <div class="top-toolbar">
+            <div class="toolbar-left">
+                <h1 class="game-title">🗺️ States & Provinces</h1>
+            </div>
+            <div class="toolbar-center">
+                <div class="scoreboard-toolbar">
+                    <div class="score-item-toolbar correct-score">
+                        <span class="score-number-toolbar" id="correct-display">0</span>
+                        <span class="score-label-toolbar">✅</span>
+                    </div>
+                    <div class="score-item-toolbar wrong-score">
+                        <span class="score-number-toolbar" id="wrong-display">0</span>
+                        <span class="score-label-toolbar">❌</span>
+                    </div>
+                    <div class="score-item-toolbar remaining-score">
+                        <span class="score-number-toolbar" id="remaining-display">0</span>
+                        <span class="score-label-toolbar">🔄</span>
+                    </div>
                 </div>
             </div>
-        </header>
-
-        <main class="game-main">
-            <div class="game-info">
-                <div class="scoreboard">
-                    <div class="score-item correct-score">
-                        <div class="score-number" id="correct-count">0</div>
-                        <div class="score-label">✅ Correct</div>
-                    </div>
-                    <div class="score-item wrong-score">
-                        <div class="score-number" id="wrong-count">0</div>
-                        <div class="score-label">❌ Wrong</div>
-                    </div>
-                    <div class="score-item remaining-score">
-                        <div class="score-number" id="remaining-count">0</div>
-                        <div class="score-label">🔄 Remaining</div>
-                    </div>
-                </div>
-                <button id="start-btn" class="start-btn">Start Game</button>
-            </div>
-
-            <div id="game-area" class="game-area hidden">
-                <div class="scoreboard-mini">
-                    <div class="mini-score-item">
-                        <span class="mini-number" id="correct-mini">0</span>✅
-                    </div>
-                    <div class="mini-score-item">
-                        <span class="mini-number" id="wrong-mini">0</span>❌
-                    </div>
-                    <div class="mini-score-item">
-                        <span class="mini-number" id="remaining-mini">0</span>🔄
-                    </div>
-                </div>
-                
-                <div class="question">
-                    <h2>What is the highlighted state/province?</h2>
-                </div>
-                
-                <div class="map-container">
-                    <div id="map-wrapper"></div>
-                </div>
-
-                <div class="answer-section">
-                    <div class="options" id="options"></div>
-                    <div class="feedback" id="feedback"></div>
-                    <button id="next-btn" class="next-btn hidden">Next →</button>
+            <div class="toolbar-right">
+                <div class="game-controls">
+                    <button id="sound-toggle" class="control-btn" title="Toggle Sound">🔊</button>
+                    <button id="voice-toggle" class="control-btn" title="Toggle Voice">🗣️</button>
+                    <button id="back-to-menu" class="control-btn" title="Back to Menu">🏠</button>
                 </div>
             </div>
+        </div>
 
-            <div id="game-complete" class="game-complete hidden">
-                <h2>🎉 Congratulations!</h2>
-                <p>You completed the game!</p>
-                
-                <div class="final-scoreboard">
-                    <div class="final-score-item final-correct">
-                        <div class="final-score-number" id="final-correct">0</div>
-                        <div class="final-score-label">✅ Correct</div>
-                    </div>
-                    <div class="final-score-item final-wrong">
-                        <div class="final-score-number" id="final-wrong">0</div>
-                        <div class="final-score-label">❌ Wrong</div>
-                    </div>
-                    <div class="final-score-item final-total">
-                        <div class="final-score-number" id="final-total">0</div>
-                        <div class="final-score-label">📋 Total</div>
-                    </div>
-                </div>
-                
-                <div class="final-percentage">
-                    <span id="final-percentage">0</span>% Accuracy
-                </div>
-                
-                <button id="play-again-btn" class="play-again-btn">Play Again</button>
+        <!-- Map Area -->
+        <div class="map-area">
+            <div id="map-wrapper"></div>
+            <div class="map-overlay">
+                <div class="question-text" id="question-text">What is the highlighted state/province?</div>
+                <div class="feedback-text" id="feedback"></div>
             </div>
-        </main>
+        </div>
+
+        <!-- Bottom Toolbar -->
+        <div class="bottom-toolbar">
+            <div class="answer-options" id="options"></div>
+            <div class="game-actions">
+                <button id="start-btn" class="action-btn start-btn">Start Game</button>
+                <button id="next-btn" class="action-btn next-btn hidden">Next →</button>
+                <button id="play-again-btn" class="action-btn play-again-btn hidden">Play Again</button>
+            </div>
+        </div>
     </div>
 
     <script src="sounds.js"></script>
