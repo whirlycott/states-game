@@ -328,6 +328,23 @@ class StatesGame {
         }, 100);
     }
     
+    // Helper function to manage feedback visibility
+    clearFeedback() {
+        const feedback = document.getElementById('feedback');
+        if (feedback) {
+            feedback.innerHTML = '';
+            feedback.classList.add('hidden-feedback');
+        }
+    }
+    
+    showFeedback(html) {
+        const feedback = document.getElementById('feedback');
+        if (feedback) {
+            feedback.innerHTML = html;
+            feedback.classList.remove('hidden-feedback');
+        }
+    }
+    
     // Assign colors to states/provinces using graph coloring algorithm
     assignMapColors() {
         this.stateColors.clear();
@@ -638,7 +655,7 @@ class StatesGame {
         // Start button stays hidden - will show automatically when mode selected
         if (nextBtn) nextBtn.classList.add('hidden');
         if (playAgainBtn) playAgainBtn.classList.add('hidden');
-        if (feedback) feedback.innerHTML = '';
+        this.clearFeedback();
         if (options) options.innerHTML = '';
     }
     
@@ -695,7 +712,7 @@ class StatesGame {
         if (startBtn) startBtn.classList.add('hidden');
         if (nextBtn) nextBtn.classList.add('hidden');
         if (playAgainBtn) playAgainBtn.classList.add('hidden');
-        if (feedback) feedback.innerHTML = '';
+        this.clearFeedback();
         
         // Reset zoom to show full map initially
         this.resetZoom();
@@ -741,6 +758,27 @@ class StatesGame {
         
         const question = this.questions[this.currentQuestion];
         
+        // Update question text based on current mode
+        const questionTextElement = document.getElementById('question-text');
+        if (questionTextElement) {
+            let questionText = '';
+            switch(this.currentMode) {
+                case 'us':
+                    questionText = 'What is the highlighted state?';
+                    break;
+                case 'canada':
+                    questionText = 'What is the highlighted province?';
+                    break;
+                case 'both':
+                    questionText = 'What is the highlighted state/province?';
+                    break;
+                default:
+                    questionText = 'What is the highlighted territory?';
+                    break;
+            }
+            questionTextElement.textContent = questionText;
+        }
+        
         // Reset map
         this.resetMapColors();
         
@@ -767,7 +805,7 @@ class StatesGame {
         this.updateScoreboard();
         
         // Hide feedback and next button
-        document.getElementById('feedback').innerHTML = '';
+        this.clearFeedback();
         document.getElementById('next-btn').classList.add('hidden');
     }
     
@@ -832,6 +870,23 @@ class StatesGame {
             if (input) {
                 input.value = '';
                 input.disabled = false;
+                // Update placeholder based on current mode
+                let placeholder = '';
+                switch(this.currentMode) {
+                    case 'us':
+                        placeholder = 'Type the name of the highlighted state...';
+                        break;
+                    case 'canada':
+                        placeholder = 'Type the name of the highlighted province...';
+                        break;
+                    case 'both':
+                        placeholder = 'Type the name of the highlighted state/province...';
+                        break;
+                    default:
+                        placeholder = 'Type the name of the highlighted territory...';
+                        break;
+                }
+                input.placeholder = placeholder;
                 input.focus();
             }
             if (submitBtn) {
@@ -883,7 +938,7 @@ class StatesGame {
             this.voice.speakIncorrect(correctAnswer);
         }
         
-        feedback.innerHTML = feedbackHTML;
+        this.showFeedback(feedbackHTML);
         
         // Show next button
         document.getElementById('next-btn').classList.remove('hidden');
@@ -1140,7 +1195,7 @@ class StatesGame {
         // Start button stays hidden - game will start automatically
         if (nextBtn) nextBtn.classList.add('hidden');
         if (playAgainBtn) playAgainBtn.classList.add('hidden');
-        if (feedback) feedback.innerHTML = '';
+        this.clearFeedback();
         if (options) options.innerHTML = '';
         
         // Reassign colors for the new game

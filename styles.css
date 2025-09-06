@@ -7,14 +7,15 @@
     box-sizing: border-box;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600;1,700&display=swap');
 
 body {
-    font-family: 'Orbitron', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     background: #0f0f23;
     color: #ffffff;
-    overflow: hidden;
-    height: 100vh;
+    overflow: auto; /* Allow scrolling */
+    min-height: 100vh; /* Use min-height instead of fixed height */
+    font-display: swap; /* Ensure font swapping works properly */
 }
 
 /* Utility Classes */
@@ -28,18 +29,24 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
+    min-height: 100%;
     background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    overflow-y: auto; /* Allow vertical scrolling within the mode selection */
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .mode-selection-content {
     text-align: center;
     max-width: 600px;
     padding: 40px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: auto 0; /* Center vertically within the flex container */
 }
 
 .mode-selection h1 {
@@ -398,10 +405,15 @@ body {
     font-size: 1rem;
     font-weight: 600;
     backdrop-filter: blur(10px);
-    min-height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: opacity 0.3s ease;
+}
+
+.feedback-text:empty,
+.feedback-text.hidden-feedback {
+    display: none;
 }
 
 .close-feedback {
