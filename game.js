@@ -469,6 +469,38 @@ class StatesGame {
                 easyBtn.classList.remove('active');
             }
         }
+        
+        // Add visual feedback that step 1 is complete
+        this.updateStepCompletion();
+    }
+    
+    // Update visual feedback for completed steps
+    updateStepCompletion() {
+        // Add checkmark or other visual feedback to show step 1 is done
+        const difficultySection = document.querySelector('.difficulty-selection');
+        if (difficultySection && this.difficulty) {
+            difficultySection.classList.add('step-completed');
+        }
+    }
+    
+    // Update mode button selection visual feedback
+    updateModeButtonSelection(selectedMode) {
+        // Remove previous selections
+        document.querySelectorAll('.mode-select-btn').forEach(btn => {
+            btn.classList.remove('selected');
+        });
+        
+        // Add selection to clicked button
+        const selectedBtn = document.getElementById(`select-${selectedMode}`);
+        if (selectedBtn) {
+            selectedBtn.classList.add('selected');
+        }
+        
+        // Mark step 2 as completed
+        const modeSection = document.querySelector('.mode-buttons');
+        if (modeSection) {
+            modeSection.classList.add('step-completed');
+        }
     }
     
     // Calculate Levenshtein distance between two strings
@@ -558,7 +590,14 @@ class StatesGame {
     
     selectMode(mode) {
         this.currentMode = mode;
-        this.showGameInterface();
+        
+        // Add visual feedback before starting game
+        this.updateModeButtonSelection(mode);
+        
+        // Small delay to show selection feedback before transitioning
+        setTimeout(() => {
+            this.showGameInterface();
+        }, 300);
         
         // Show loading message while waiting for game to start
         const feedback = document.getElementById('feedback');

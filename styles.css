@@ -29,24 +29,26 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    min-height: 100%;
+    height: 100vh;
     background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
     z-index: 1000;
-    overflow-y: auto; /* Allow vertical scrolling within the mode selection */
+    overflow-y: auto; /* Allow vertical scrolling */
     padding: 20px;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* Start from top to allow scrolling */
 }
 
 .mode-selection-content {
     text-align: center;
     max-width: 600px;
-    padding: 40px;
+    padding: 40px 20px;
     width: 100%;
     box-sizing: border-box;
-    margin: auto 0; /* Center vertically within the flex container */
+    margin: auto; /* Center horizontally, but allow vertical flow */
+    min-height: fit-content;
 }
 
 .mode-selection h1 {
@@ -58,9 +60,54 @@ body {
 }
 
 .mode-selection p {
-    font-size: 1.2rem;
-    margin-bottom: 40px;
+    font-size: 1.3rem;
+    margin-bottom: 15px;
     opacity: 0.9;
+    line-height: 1.4;
+}
+
+/* Instructions for better UX */
+.setup-instructions {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 35px;
+    backdrop-filter: blur(10px);
+}
+
+.setup-instructions h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #00b894;
+}
+
+.setup-step {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.setup-step-number {
+    background: #00b894;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.setup-step:last-child {
+    margin-bottom: 0;
 }
 
 .mode-buttons {
@@ -68,6 +115,46 @@ body {
     flex-direction: column;
     gap: 20px;
     align-items: center;
+    background: rgba(74, 144, 226, 0.1);
+    border: 1px solid rgba(74, 144, 226, 0.2);
+    border-radius: 15px;
+    padding: 25px;
+    position: relative;
+}
+
+.mode-buttons::before {
+    content: "STEP 2";
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    background: #4a90e2;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.mode-buttons.step-completed::before {
+    content: "STEP 2 ✓";
+    background: #27ae60;
+    transform: scale(1.05);
+}
+
+.mode-buttons.step-completed {
+    border-color: rgba(39, 174, 96, 0.4);
+    background: rgba(39, 174, 96, 0.1);
+}
+
+.mode-buttons h3 {
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    color: #ffffff;
+    opacity: 0.9;
+    width: 100%;
+    text-align: center;
 }
 
 .mode-select-btn {
@@ -84,6 +171,30 @@ body {
     backdrop-filter: blur(10px);
     min-width: 280px;
     font-family: inherit;
+    position: relative;
+}
+
+.mode-select-btn.selected {
+    background: rgba(74, 144, 226, 0.3);
+    border-color: #4a90e2;
+    transform: scale(1.02);
+}
+
+.mode-select-btn.selected::after {
+    content: "✓";
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: #4a90e2;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
 }
 
 .mode-select-btn:hover {
@@ -113,6 +224,37 @@ body {
 .difficulty-selection {
     margin-bottom: 40px;
     text-align: center;
+    background: rgba(0, 184, 148, 0.1);
+    border: 1px solid rgba(0, 184, 148, 0.2);
+    border-radius: 15px;
+    padding: 25px;
+    position: relative;
+}
+
+.difficulty-selection::before {
+    content: "STEP 1";
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    background: #00b894;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.difficulty-selection.step-completed::before {
+    content: "STEP 1 ✓";
+    background: #27ae60;
+    transform: scale(1.05);
+}
+
+.difficulty-selection.step-completed {
+    border-color: rgba(39, 174, 96, 0.4);
+    background: rgba(39, 174, 96, 0.1);
 }
 
 .difficulty-selection h3 {
