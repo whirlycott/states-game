@@ -16,6 +16,10 @@ class StatesGame {
         this.svgLoaded = false; // Track if SVG has loaded
         this.difficulty = 'easy'; // 'easy' or 'hard'
         
+        // Color palette for map coloring
+        this.colorPalette = ['#f3f9b2', '#e39bdb', '#4ca8bc', '#1d27a2', '#4768ae', '#e15c4f', '#fcffcd', '#f560e2'];
+        this.stateColors = new Map(); // Track assigned colors
+        
         // State/Province data mapping
         this.usStates = {
             'US-AL': 'Alabama', 'US-AK': 'Alaska', 'US-AZ': 'Arizona', 'US-AR': 'Arkansas',
@@ -39,6 +43,100 @@ class StatesGame {
             'CA-NT': 'Northwest Territories', 'CA-NU': 'Nunavut', 'CA-ON': 'Ontario',
             'CA-PE': 'Prince Edward Island', 'CA-QC': 'Quebec', 'CA-SK': 'Saskatchewan',
             'CA-YT': 'Yukon'
+        };
+        
+        // Adjacency data for proper map coloring (no adjacent territories get same color)
+        this.adjacencyMap = {
+            // US States
+            'US-AL': ['US-TN', 'US-GA', 'US-FL', 'US-MS'],
+            'US-AK': [], // Island, no land borders
+            'US-AZ': ['US-CA', 'US-NV', 'US-UT', 'US-CO', 'US-NM'],
+            'US-AR': ['US-MO', 'US-TN', 'US-MS', 'US-LA', 'US-TX', 'US-OK'],
+            'US-CA': ['US-OR', 'US-NV', 'US-AZ'],
+            'US-CO': ['US-WY', 'US-NE', 'US-KS', 'US-OK', 'US-NM', 'US-AZ', 'US-UT'],
+            'US-CT': ['US-MA', 'US-RI', 'US-NY'],
+            'US-DE': ['US-MD', 'US-PA'],
+            'US-DC': ['US-MD', 'US-VA'],
+            'US-FL': ['US-AL', 'US-GA'],
+            'US-GA': ['US-FL', 'US-AL', 'US-TN', 'US-NC', 'US-SC'],
+            'US-HI': [], // Island, no land borders
+            'US-ID': ['US-MT', 'US-WY', 'US-UT', 'US-NV', 'US-OR', 'US-WA'],
+            'US-IL': ['US-WI', 'US-IN', 'US-IA', 'US-MO', 'US-KY'],
+            'US-IN': ['US-MI', 'US-OH', 'US-KY', 'US-IL'],
+            'US-IA': ['US-MN', 'US-WI', 'US-IL', 'US-MO', 'US-KS', 'US-NE', 'US-SD'],
+            'US-KS': ['US-NE', 'US-MO', 'US-OK', 'US-CO'],
+            'US-KY': ['US-IN', 'US-OH', 'US-WV', 'US-VA', 'US-TN', 'US-MO', 'US-IL'],
+            'US-LA': ['US-TX', 'US-AR', 'US-MS'],
+            'US-ME': ['US-NH'],
+            'US-MD': ['US-PA', 'US-WV', 'US-VA', 'US-DC', 'US-DE'],
+            'US-MA': ['US-RI', 'US-CT', 'US-NY', 'US-VT', 'US-NH'],
+            'US-MI': ['US-WI', 'US-IN', 'US-OH'],
+            'US-MN': ['US-WI', 'US-IA', 'US-SD', 'US-ND'],
+            'US-MS': ['US-LA', 'US-AR', 'US-TN', 'US-AL'],
+            'US-MO': ['US-IA', 'US-IL', 'US-KY', 'US-TN', 'US-AR', 'US-OK', 'US-KS', 'US-NE'],
+            'US-MT': ['US-ND', 'US-SD', 'US-WY', 'US-ID'],
+            'US-NE': ['US-SD', 'US-IA', 'US-MO', 'US-KS', 'US-CO', 'US-WY'],
+            'US-NV': ['US-ID', 'US-UT', 'US-AZ', 'US-CA', 'US-OR'],
+            'US-NH': ['US-ME', 'US-MA', 'US-VT'],
+            'US-NJ': ['US-NY', 'US-PA'],
+            'US-NM': ['US-CO', 'US-OK', 'US-TX', 'US-AZ'],
+            'US-NY': ['US-VT', 'US-MA', 'US-CT', 'US-NJ', 'US-PA'],
+            'US-NC': ['US-VA', 'US-TN', 'US-GA', 'US-SC'],
+            'US-ND': ['US-MN', 'US-SD', 'US-MT'],
+            'US-OH': ['US-PA', 'US-WV', 'US-KY', 'US-IN', 'US-MI'],
+            'US-OK': ['US-KS', 'US-MO', 'US-AR', 'US-TX', 'US-NM', 'US-CO'],
+            'US-OR': ['US-WA', 'US-ID', 'US-NV', 'US-CA'],
+            'US-PA': ['US-NY', 'US-NJ', 'US-DE', 'US-MD', 'US-WV', 'US-OH'],
+            'US-RI': ['US-CT', 'US-MA'],
+            'US-SC': ['US-NC', 'US-GA'],
+            'US-SD': ['US-ND', 'US-MN', 'US-IA', 'US-NE', 'US-WY', 'US-MT'],
+            'US-TN': ['US-KY', 'US-VA', 'US-NC', 'US-GA', 'US-AL', 'US-MS', 'US-AR', 'US-MO'],
+            'US-TX': ['US-NM', 'US-OK', 'US-AR', 'US-LA'],
+            'US-UT': ['US-ID', 'US-WY', 'US-CO', 'US-AZ', 'US-NV'],
+            'US-VT': ['US-NH', 'US-MA', 'US-NY'],
+            'US-VA': ['US-MD', 'US-WV', 'US-KY', 'US-TN', 'US-NC', 'US-DC'],
+            'US-WA': ['US-ID', 'US-OR'],
+            'US-WV': ['US-PA', 'US-MD', 'US-VA', 'US-KY', 'US-OH'],
+            'US-WI': ['US-MI', 'US-MN', 'US-IA', 'US-IL'],
+            'US-WY': ['US-MT', 'US-SD', 'US-NE', 'US-CO', 'US-UT', 'US-ID'],
+            
+            // Canadian Provinces/Territories
+            'CA-AB': ['CA-BC', 'CA-SK', 'CA-NT'],
+            'CA-BC': ['CA-AB', 'CA-NT', 'CA-YT'],
+            'CA-MB': ['CA-SK', 'CA-ON', 'CA-NU'],
+            'CA-NB': ['CA-QC', 'CA-NS', 'CA-PE'],
+            'CA-NL': [], // Island/separate, no land borders with other provinces
+            'CA-NS': ['CA-NB'],
+            'CA-NT': ['CA-YT', 'CA-BC', 'CA-AB', 'CA-SK', 'CA-MB', 'CA-NU'],
+            'CA-NU': ['CA-NT', 'CA-MB', 'CA-ON', 'CA-QC'],
+            'CA-ON': ['CA-MB', 'CA-QC', 'CA-NU'],
+            'CA-PE': ['CA-NB'], // Connected via bridge
+            'CA-QC': ['CA-ON', 'CA-NB', 'CA-NU'],
+            'CA-SK': ['CA-AB', 'CA-MB', 'CA-NT'],
+            'CA-YT': ['CA-BC', 'CA-NT'],
+            
+            // Update cross-border adjacencies
+            'US-WA': ['US-ID', 'US-OR', 'CA-BC'],
+            'US-ID': ['US-MT', 'US-WY', 'US-UT', 'US-NV', 'US-OR', 'US-WA', 'CA-BC'],
+            'US-MT': ['US-ND', 'US-SD', 'US-WY', 'US-ID', 'CA-AB', 'CA-SK'],
+            'US-ND': ['US-MN', 'US-SD', 'US-MT', 'CA-SK', 'CA-MB'],
+            'US-MN': ['US-WI', 'US-IA', 'US-SD', 'US-ND', 'CA-MB', 'CA-ON'],
+            'US-MI': ['US-WI', 'US-IN', 'US-OH', 'CA-ON'],
+            'US-NY': ['US-VT', 'US-MA', 'US-CT', 'US-NJ', 'US-PA', 'CA-ON', 'CA-QC'],
+            'US-VT': ['US-NH', 'US-MA', 'US-NY', 'CA-QC'],
+            'US-NH': ['US-ME', 'US-MA', 'US-VT', 'CA-QC'],
+            'US-ME': ['US-NH', 'CA-QC', 'CA-NB'],
+            'US-AK': ['CA-BC', 'CA-YT'],  // Alaska borders Canada
+            
+            // Update Canadian provinces with cross-border adjacencies
+            'CA-BC': ['CA-AB', 'CA-NT', 'CA-YT', 'US-WA', 'US-ID', 'US-AK'],
+            'CA-AB': ['CA-BC', 'CA-SK', 'CA-NT', 'US-MT'],
+            'CA-SK': ['CA-AB', 'CA-MB', 'CA-NT', 'US-MT', 'US-ND'],
+            'CA-MB': ['CA-SK', 'CA-ON', 'CA-NU', 'US-ND', 'US-MN'],
+            'CA-ON': ['CA-MB', 'CA-QC', 'CA-NU', 'US-MN', 'US-MI', 'US-NY'],
+            'CA-QC': ['CA-ON', 'CA-NB', 'CA-NU', 'US-NY', 'US-VT', 'US-NH', 'US-ME'],
+            'CA-NB': ['CA-QC', 'CA-NS', 'CA-PE', 'US-ME'],
+            'CA-YT': ['CA-BC', 'CA-NT', 'US-AK']
         };
         
         this.init();
@@ -119,7 +217,7 @@ class StatesGame {
             text.style.display = 'none';
         });
         
-        // Make all states/provinces unselectable by default
+        // Set initial state/province styling - will be colored when game starts
         const allPaths = this.svgElement.querySelectorAll('[id^="US-"], [id^="CA-"]');
         allPaths.forEach(path => {
             path.style.fill = '#e0e0e0';
@@ -228,6 +326,114 @@ class StatesGame {
                 }
             });
         }, 100);
+    }
+    
+    // Assign colors to states/provinces using graph coloring algorithm
+    assignMapColors() {
+        this.stateColors.clear();
+        
+        console.log(`Assigning colors for mode: ${this.currentMode}`);
+        
+        // Get territories to color based on current mode
+        let territoriesToColor = [];
+        switch(this.currentMode) {
+            case 'us':
+                territoriesToColor = Object.keys(this.usStates);
+                break;
+            case 'canada':
+                territoriesToColor = Object.keys(this.canadianProvinces);
+                break;
+            case 'both':
+                territoriesToColor = [...Object.keys(this.usStates), ...Object.keys(this.canadianProvinces)];
+                break;
+            default:
+                console.log('No valid mode selected, skipping color assignment');
+                return;
+        }
+        
+        console.log(`Found ${territoriesToColor.length} territories to color`);
+        
+        // Shuffle the territories for random color assignment
+        const shuffledTerritories = [...territoriesToColor].sort(() => Math.random() - 0.5);
+        
+        // Assign colors using greedy graph coloring
+        for (const territory of shuffledTerritories) {
+            const neighbors = this.adjacencyMap[territory] || [];
+            const usedColors = new Set();
+            
+            // Collect colors used by adjacent territories
+            for (const neighbor of neighbors) {
+                if (this.stateColors.has(neighbor)) {
+                    usedColors.add(this.stateColors.get(neighbor));
+                }
+            }
+            
+            // Find first available color from palette
+            let assignedColor = this.colorPalette[0]; // fallback
+            for (const color of this.colorPalette) {
+                if (!usedColors.has(color)) {
+                    assignedColor = color;
+                    break;
+                }
+            }
+            
+            this.stateColors.set(territory, assignedColor);
+        }
+        
+        console.log(`Assigned colors to ${territoriesToColor.length} territories in ${this.currentMode} mode`);
+        console.log('Sample color assignments:', Array.from(this.stateColors.entries()).slice(0, 5));
+    }
+    
+    // Apply colors to the SVG map
+    applyMapColors() {
+        if (!this.svgElement) {
+            console.log('Cannot apply colors: SVG element not loaded');
+            return;
+        }
+        
+        console.log(`Applying colors to map. State colors map size: ${this.stateColors.size}`);
+        
+        // Reset all territories to default gray first
+        const allPaths = this.svgElement.querySelectorAll('[id^="US-"], [id^="CA-"]');
+        allPaths.forEach(path => {
+            path.style.fill = '#e0e0e0';
+            path.style.stroke = '#999';
+            path.style.strokeWidth = '1';
+        });
+        
+        // Apply assigned colors
+        let coloredCount = 0;
+        for (const [territoryId, color] of this.stateColors) {
+            const element = this.svgElement.querySelector(`#${territoryId}`);
+            if (element) {
+                element.style.fill = color;
+                element.style.stroke = this.darkenColor(color, 0.2);
+                element.style.strokeWidth = '1.5';
+                coloredCount++;
+            } else {
+                console.warn(`Element not found for territory: ${territoryId}`);
+            }
+        }
+        console.log(`Successfully colored ${coloredCount} territories`);
+    }
+    
+    // Helper function to darken a hex color for borders
+    darkenColor(hex, factor) {
+        // Remove # if present
+        hex = hex.replace('#', '');
+        
+        // Parse RGB components
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        
+        // Darken each component
+        const newR = Math.round(r * (1 - factor));
+        const newG = Math.round(g * (1 - factor));
+        const newB = Math.round(b * (1 - factor));
+        
+        // Convert back to hex
+        return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
     }
     
     selectDifficulty(difficulty) {
@@ -348,8 +554,10 @@ class StatesGame {
     }
     
     waitForSVGAndStartGame() {
-        // If SVG is already loaded, start immediately
+        // If SVG is already loaded, color immediately and start game
         if (this.svgLoaded) {
+            this.assignMapColors();
+            this.applyMapColors();
             setTimeout(() => {
                 this.startGame();
             }, 500);
@@ -360,6 +568,9 @@ class StatesGame {
         const checkInterval = setInterval(() => {
             if (this.svgLoaded) {
                 clearInterval(checkInterval);
+                // Color the map as soon as SVG is loaded
+                this.assignMapColors();
+                this.applyMapColors();
                 setTimeout(() => {
                     this.startGame();
                 }, 500);
@@ -388,6 +599,12 @@ class StatesGame {
         // Hide the start button since game will start automatically
         if (startBtn) startBtn.classList.add('hidden');
         
+        // Apply colors immediately when interface is shown and mode is selected
+        if (this.svgElement && this.currentMode) {
+            this.assignMapColors();
+            this.applyMapColors();
+        }
+        
         this.updateScoreboard();
     }
     
@@ -395,6 +612,7 @@ class StatesGame {
         this.gameStarted = false;
         this.currentMode = null;
         this.answeredStates.clear();
+        this.stateColors.clear(); // Clear color assignments
         this.resetMapColors();
         this.resetZoom();
         
@@ -731,9 +949,17 @@ class StatesGame {
                     path.style.strokeWidth = '2';
                 }
             } else {
-                path.style.fill = '#e0e0e0';
-                path.style.stroke = '#999';
-                path.style.strokeWidth = '1';
+                // Restore original color assignment or default gray
+                const assignedColor = this.stateColors.get(stateId);
+                if (assignedColor) {
+                    path.style.fill = assignedColor;
+                    path.style.stroke = this.darkenColor(assignedColor, 0.2);
+                    path.style.strokeWidth = '1.5';
+                } else {
+                    path.style.fill = '#e0e0e0';
+                    path.style.stroke = '#999';
+                    path.style.strokeWidth = '1';
+                }
             }
         });
     }
@@ -916,6 +1142,10 @@ class StatesGame {
         if (playAgainBtn) playAgainBtn.classList.add('hidden');
         if (feedback) feedback.innerHTML = '';
         if (options) options.innerHTML = '';
+        
+        // Reassign colors for the new game
+        this.assignMapColors();
+        this.applyMapColors();
         
         this.updateScoreboard();
         
