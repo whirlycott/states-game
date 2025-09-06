@@ -11,7 +11,25 @@
     <div id="mode-selection" class="mode-selection">
         <div class="mode-selection-content">
             <h1>🗺️ States & Provinces Game</h1>
-            <p>Choose your game mode to begin:</p>
+            <p>Choose your game mode and difficulty:</p>
+            
+            <!-- Difficulty Selection -->
+            <div class="difficulty-selection">
+                <h3>Difficulty:</h3>
+                <div class="difficulty-buttons">
+                    <button id="select-easy" class="difficulty-btn active">
+                        <span class="difficulty-icon">🎯</span>
+                        <span class="difficulty-title">Easy Mode</span>
+                        <span class="difficulty-description">Multiple choice buttons</span>
+                    </button>
+                    <button id="select-hard" class="difficulty-btn">
+                        <span class="difficulty-icon">⚡</span>
+                        <span class="difficulty-title">Hard Mode</span>
+                        <span class="difficulty-description">Type the answer</span>
+                    </button>
+                </div>
+            </div>
+            
             <div class="mode-buttons">
                 <button id="select-us" class="mode-select-btn">
                     <span class="mode-icon">🇺🇸</span>
@@ -76,8 +94,11 @@
         <!-- Bottom Toolbar -->
         <div class="bottom-toolbar">
             <div class="answer-options" id="options"></div>
+            <div class="text-input-container hidden" id="text-input-container">
+                <input type="text" id="text-answer-input" class="text-answer-input" placeholder="Type the name of the highlighted state/province..." autocomplete="off" spellcheck="false">
+                <button id="submit-answer-btn" class="action-btn submit-btn">Submit</button>
+            </div>
             <div class="game-actions">
-                <button id="start-btn" class="action-btn start-btn">Start Game</button>
                 <button id="next-btn" class="action-btn next-btn hidden">Next →</button>
                 <button id="play-again-btn" class="action-btn play-again-btn hidden">Play Again</button>
             </div>

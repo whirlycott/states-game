@@ -12,6 +12,9 @@ class StatesGame {
         this.sounds = new RetroSounds();
         this.voice = new EdgeyVoice();
         this.gameStarted = false;
+        this.answeredStates = new Map(); // Track correct/incorrect states
+        this.svgLoaded = false; // Track if SVG has loaded
+        this.difficulty = 'easy'; // 'easy' or 'hard'
         
         // State/Province data mapping
         this.usStates = {
@@ -92,6 +95,9 @@ class StatesGame {
                 throw new Error('No states or provinces found in the SVG');
             }
             
+            // Mark SVG as loaded
+            this.svgLoaded = true;
+            
         } catch (error) {
             console.error('Error loading SVG:', error);
             mapWrapper.innerHTML = `
@@ -133,6 +139,16 @@ class StatesGame {
             }
         };
         
+        // Difficulty selection buttons
+        safeAddListener('select-easy', 'click', () => {
+            this.sounds.playButtonHover();
+            this.selectDifficulty('easy');
+        });
+        safeAddListener('select-hard', 'click', () => {
+            this.sounds.playButtonHover();
+            this.selectDifficulty('hard');
+        });
+        
         // Mode selection buttons
         safeAddListener('select-us', 'click', () => {
             this.sounds.playButtonHover();
@@ -147,8 +163,7 @@ class StatesGame {
             this.selectMode('both');
         });
         
-        // Game controls
-        safeAddListener('start-btn', 'click', () => this.startGame());
+        // Game controls (start button removed - game starts automatically)
         safeAddListener('next-btn', 'click', () => {
             this.sounds.playNextQuestion();
             this.nextQuestion();
@@ -160,6 +175,19 @@ class StatesGame {
         safeAddListener('back-to-menu', 'click', () => {
             this.sounds.playButtonHover();
             this.backToMenu();
+        });
+        
+        // Text input for hard mode
+        safeAddListener('submit-answer-btn', 'click', () => {
+            this.sounds.playButtonHover();
+            this.submitTextAnswer();
+        });
+        
+        // Allow Enter key to submit answer
+        safeAddListener('text-answer-input', 'keypress', (event) => {
+            if (event.key === 'Enter') {
+                this.submitTextAnswer();
+            }
         });
         
         // Control buttons (always visible)
@@ -202,17 +230,163 @@ class StatesGame {
         }, 100);
     }
     
+    selectDifficulty(difficulty) {
+        this.difficulty = difficulty;
+        
+        // Update button states
+        const easyBtn = document.getElementById('select-easy');
+        const hardBtn = document.getElementById('select-hard');
+        
+        if (easyBtn && hardBtn) {
+            if (difficulty === 'easy') {
+                easyBtn.classList.add('active');
+                hardBtn.classList.remove('active');
+            } else {
+                hardBtn.classList.add('active');
+                easyBtn.classList.remove('active');
+            }
+        }
+    }
+    
+    // Calculate Levenshtein distance between two strings
+    levenshteinDistance(str1, str2) {
+        const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+        
+        for (let i = 0; i <= str1.length; i++) {
+            matrix[0][i] = i;
+        }
+        
+        for (let j = 0; j <= str2.length; j++) {
+            matrix[j][0] = j;
+        }
+        
+        for (let j = 1; j <= str2.length; j++) {
+            for (let i = 1; i <= str1.length; i++) {
+                const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+                matrix[j][i] = Math.min(
+                    matrix[j][i - 1] + 1,
+                    matrix[j - 1][i] + 1,
+                    matrix[j - 1][i - 1] + indicator
+                );
+            }
+        }
+        
+        return matrix[str2.length][str1.length];
+    }
+    
+    // Get a funny encouraging phrase for close answers
+    getCloseAnswerPhrase() {
+        const phrases = [
+            "So close you could taste it! 🎯",
+            "Almost there, geography wizard! 🧙‍♂️",
+            "You're in the right zip code! 📮",
+            "Close enough for horseshoes! 🐴",
+            "Your spelling teacher would be proud-ish! 📝",
+            "Geography: A+, Spelling: needs work! 📚",
+            "Right idea, wrong execution! 💡",
+            "You were thisclose! 🤏",
+            "Almost nailed it! 🔨",
+            "So near, yet so far! 🎢"
+        ];
+        return phrases[Math.floor(Math.random() * phrases.length)];
+    }
+    
+    submitTextAnswer() {
+        const input = document.getElementById('text-answer-input');
+        if (!input) return;
+        
+        const userAnswer = input.value.trim();
+        if (!userAnswer) return;
+        
+        const currentQuestion = this.questions[this.currentQuestion];
+        const correctAnswer = currentQuestion.correctAnswer;
+        
+        // Normalize both answers for comparison
+        const normalizedUser = userAnswer.toLowerCase();
+        const normalizedCorrect = correctAnswer.toLowerCase();
+        
+        const isCorrect = normalizedUser === normalizedCorrect;
+        let feedback = '';
+        
+        if (isCorrect) {
+            feedback = '<span class="correct-feedback">✅ Correct!</span>';
+        } else {
+            // Check Levenshtein distance for close answers
+            const distance = this.levenshteinDistance(normalizedUser, normalizedCorrect);
+            const maxLength = Math.max(userAnswer.length, correctAnswer.length);
+            const similarity = 1 - (distance / maxLength);
+            
+            if (similarity >= 0.6) { // If 60% similar or better
+                const encouragingPhrase = this.getCloseAnswerPhrase();
+                feedback = `<span class="close-feedback">🎯 ${encouragingPhrase}<br>The correct answer is: <strong>${correctAnswer}</strong></span>`;
+            } else {
+                feedback = `<span class="incorrect-feedback">❌ Incorrect. The correct answer is <strong>${correctAnswer}</strong>.</span>`;
+            }
+        }
+        
+        // Process the answer
+        this.processAnswer(isCorrect, correctAnswer, feedback);
+        
+        // Disable input and submit button
+        input.disabled = true;
+        const submitBtn = document.getElementById('submit-answer-btn');
+        if (submitBtn) submitBtn.disabled = true;
+    }
+    
     selectMode(mode) {
         this.currentMode = mode;
         this.showGameInterface();
+        
+        // Show loading message while waiting for game to start
+        const feedback = document.getElementById('feedback');
+        if (feedback) {
+            feedback.innerHTML = '<div style="text-align: center; color: #00b894;">🎮 Starting game...</div>';
+        }
+        
+        // Wait for SVG to load, then start the game
+        this.waitForSVGAndStartGame();
+    }
+    
+    waitForSVGAndStartGame() {
+        // If SVG is already loaded, start immediately
+        if (this.svgLoaded) {
+            setTimeout(() => {
+                this.startGame();
+            }, 500);
+            return;
+        }
+        
+        // Otherwise, check every 100ms until it's loaded
+        const checkInterval = setInterval(() => {
+            if (this.svgLoaded) {
+                clearInterval(checkInterval);
+                setTimeout(() => {
+                    this.startGame();
+                }, 500);
+            }
+        }, 100);
+        
+        // Fallback timeout after 10 seconds
+        setTimeout(() => {
+            clearInterval(checkInterval);
+            if (!this.svgLoaded) {
+                console.error('SVG failed to load within timeout');
+                // Try to start anyway
+                this.startGame();
+            }
+        }, 10000);
     }
     
     showGameInterface() {
         const modeSelection = document.getElementById('mode-selection');
         const gameInterface = document.getElementById('game-interface');
+        const startBtn = document.getElementById('start-btn');
         
         if (modeSelection) modeSelection.classList.add('hidden');
         if (gameInterface) gameInterface.classList.remove('hidden');
+        
+        // Hide the start button since game will start automatically
+        if (startBtn) startBtn.classList.add('hidden');
         
         this.updateScoreboard();
     }
@@ -220,6 +394,7 @@ class StatesGame {
     backToMenu() {
         this.gameStarted = false;
         this.currentMode = null;
+        this.answeredStates.clear();
         this.resetMapColors();
         this.resetZoom();
         
@@ -237,13 +412,12 @@ class StatesGame {
         this.questions = [];
         
         // Reset UI elements safely
-        const startBtn = document.getElementById('start-btn');
         const nextBtn = document.getElementById('next-btn');
         const playAgainBtn = document.getElementById('play-again-btn');
         const feedback = document.getElementById('feedback');
         const options = document.getElementById('options');
         
-        if (startBtn) startBtn.classList.remove('hidden');
+        // Start button stays hidden - will show automatically when mode selected
         if (nextBtn) nextBtn.classList.add('hidden');
         if (playAgainBtn) playAgainBtn.classList.add('hidden');
         if (feedback) feedback.innerHTML = '';
@@ -279,6 +453,10 @@ class StatesGame {
     
     startGame() {
         if (!this.currentMode) return; // Safety check
+        if (!this.svgElement) {
+            console.error('Cannot start game: SVG not loaded');
+            return;
+        }
         
         this.sounds.playGameStart();
         this.gameStarted = true;
@@ -348,12 +526,15 @@ class StatesGame {
         // Reset map
         this.resetMapColors();
         
-        // Highlight current state/province and zoom to it
+        // Highlight current state/province with yellow and marching ants
         const targetElement = this.svgElement.querySelector(`#${question.id}`);
         if (targetElement) {
-            targetElement.style.fill = '#ff6b6b';
-            targetElement.style.stroke = '#d63031';
-            targetElement.style.strokeWidth = '2';
+            targetElement.style.fill = '#ffeb3b';
+            targetElement.style.stroke = '#ff9800';
+            targetElement.style.strokeWidth = '3';
+            targetElement.style.strokeDasharray = '10,5';
+            targetElement.style.animation = 'marchingAnts 1s linear infinite';
+            targetElement.classList.add('current-state');
             
             // Zoom to the highlighted state/province with a small delay for visual effect
             setTimeout(() => {
@@ -374,47 +555,120 @@ class StatesGame {
     
     generateOptions(question) {
         const optionsContainer = document.getElementById('options');
-        optionsContainer.innerHTML = '';
+        const textInputContainer = document.getElementById('text-input-container');
         
-        let allAnswers = [];
-        switch(this.currentMode) {
-            case 'us':
-                allAnswers = Object.values(this.usStates);
-                break;
-            case 'canada':
-                allAnswers = Object.values(this.canadianProvinces);
-                break;
-            case 'both':
-                allAnswers = [...Object.values(this.usStates), ...Object.values(this.canadianProvinces)];
-                break;
+        if (this.difficulty === 'easy') {
+            // Show multiple choice buttons
+            optionsContainer.classList.remove('hidden');
+            textInputContainer.classList.add('hidden');
+            
+            optionsContainer.innerHTML = '';
+            
+            let allAnswers = [];
+            switch(this.currentMode) {
+                case 'us':
+                    allAnswers = Object.values(this.usStates);
+                    break;
+                case 'canada':
+                    allAnswers = Object.values(this.canadianProvinces);
+                    break;
+                case 'both':
+                    allAnswers = [...Object.values(this.usStates), ...Object.values(this.canadianProvinces)];
+                    break;
+            }
+            
+            // Create 4 options including the correct answer
+            const options = [question.correctAnswer];
+            
+            // Add 3 random wrong answers
+            while (options.length < 4) {
+                const randomAnswer = allAnswers[Math.floor(Math.random() * allAnswers.length)];
+                if (!options.includes(randomAnswer)) {
+                    options.push(randomAnswer);
+                }
+            }
+            
+            // Shuffle options
+            for (let i = options.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [options[i], options[j]] = [options[j], options[i]];
+            }
+            
+            // Create option buttons
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.className = 'option-btn';
+                button.textContent = option;
+                button.addEventListener('click', () => this.selectAnswer(option, question.correctAnswer));
+                button.addEventListener('mouseenter', () => this.sounds.playButtonHover());
+                optionsContainer.appendChild(button);
+            });
+        } else {
+            // Show text input for hard mode
+            optionsContainer.classList.add('hidden');
+            textInputContainer.classList.remove('hidden');
+            
+            const input = document.getElementById('text-answer-input');
+            const submitBtn = document.getElementById('submit-answer-btn');
+            
+            if (input) {
+                input.value = '';
+                input.disabled = false;
+                input.focus();
+            }
+            if (submitBtn) {
+                submitBtn.disabled = false;
+            }
         }
+    }
+    
+    processAnswer(isCorrect, correctAnswer, feedbackHTML) {
+        const currentQuestion = this.questions[this.currentQuestion];
         
-        // Create 4 options including the correct answer
-        const options = [question.correctAnswer];
+        // Store the answer result
+        this.answeredStates.set(currentQuestion.id, isCorrect);
         
-        // Add 3 random wrong answers
-        while (options.length < 4) {
-            const randomAnswer = allAnswers[Math.floor(Math.random() * allAnswers.length)];
-            if (!options.includes(randomAnswer)) {
-                options.push(randomAnswer);
+        // Update the state color on the map
+        const stateElement = this.svgElement.querySelector(`#${currentQuestion.id}`);
+        if (stateElement) {
+            // Remove current state styling
+            stateElement.classList.remove('current-state');
+            stateElement.style.animation = 'none';
+            stateElement.style.strokeDasharray = 'none';
+            
+            if (isCorrect) {
+                stateElement.style.fill = '#4caf50';
+                stateElement.style.stroke = '#388e3c';
+                stateElement.style.strokeWidth = '2';
+            } else {
+                stateElement.style.fill = '#f44336';
+                stateElement.style.stroke = '#d32f2f';
+                stateElement.style.strokeWidth = '2';
             }
         }
         
-        // Shuffle options
-        for (let i = options.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [options[i], options[j]] = [options[j], options[i]];
+        // Track answers and update scoreboard
+        if (isCorrect) {
+            this.correctAnswers++;
+        } else {
+            this.wrongAnswers++;
+        }
+        this.updateScoreboard();
+        
+        // Show feedback with sound and voice
+        const feedback = document.getElementById('feedback');
+        if (isCorrect) {
+            this.sounds.playCorrect();
+            this.voice.speakCorrect(correctAnswer);
+        } else {
+            this.sounds.playIncorrect();
+            this.voice.speakIncorrect(correctAnswer);
         }
         
-        // Create option buttons
-        options.forEach(option => {
-            const button = document.createElement('button');
-            button.className = 'option-btn';
-            button.textContent = option;
-            button.addEventListener('click', () => this.selectAnswer(option, question.correctAnswer));
-            button.addEventListener('mouseenter', () => this.sounds.playButtonHover());
-            optionsContainer.appendChild(button);
-        });
+        feedback.innerHTML = feedbackHTML;
+        
+        // Show next button
+        document.getElementById('next-btn').classList.remove('hidden');
     }
     
     selectAnswer(selectedAnswer, correctAnswer) {
@@ -430,28 +684,15 @@ class StatesGame {
             }
         });
         
-        // Track answers and update scoreboard
+        // Generate feedback HTML
+        let feedbackHTML = '';
         if (isCorrect) {
-            this.correctAnswers++;
+            feedbackHTML = '<span class="correct-feedback">✅ Correct!</span>';
         } else {
-            this.wrongAnswers++;
-        }
-        this.updateScoreboard();
-        
-        // Show feedback with sound and voice
-        const feedback = document.getElementById('feedback');
-        if (isCorrect) {
-            this.sounds.playCorrect();
-            this.voice.speakCorrect(correctAnswer);
-            feedback.innerHTML = '<span class="correct-feedback">✅ Correct!</span>';
-        } else {
-            this.sounds.playIncorrect();
-            this.voice.speakIncorrect(correctAnswer);
-            feedback.innerHTML = `<span class="incorrect-feedback">❌ Incorrect. The correct answer is ${correctAnswer}.</span>`;
+            feedbackHTML = `<span class="incorrect-feedback">❌ Incorrect. The correct answer is ${correctAnswer}.</span>`;
         }
         
-        // Show next button
-        document.getElementById('next-btn').classList.remove('hidden');
+        this.processAnswer(isCorrect, correctAnswer, feedbackHTML);
     }
     
     nextQuestion() {
@@ -468,12 +709,32 @@ class StatesGame {
             text.style.display = 'none';
         });
         
-        // Reset state/province colors
+        // Reset state/province colors, but preserve answered states
         const allPaths = this.svgElement.querySelectorAll('[id^="US-"], [id^="CA-"]');
         allPaths.forEach(path => {
-            path.style.fill = '#e0e0e0';
-            path.style.stroke = '#999';
-            path.style.strokeWidth = '1';
+            // Remove current state styling
+            path.classList.remove('current-state');
+            path.style.animation = 'none';
+            path.style.strokeDasharray = 'none';
+            
+            // Check if this state has been answered
+            const stateId = path.id;
+            if (this.answeredStates.has(stateId)) {
+                const wasCorrect = this.answeredStates.get(stateId);
+                if (wasCorrect) {
+                    path.style.fill = '#4caf50';
+                    path.style.stroke = '#388e3c';
+                    path.style.strokeWidth = '2';
+                } else {
+                    path.style.fill = '#f44336';
+                    path.style.stroke = '#d32f2f';
+                    path.style.strokeWidth = '2';
+                }
+            } else {
+                path.style.fill = '#e0e0e0';
+                path.style.stroke = '#999';
+                path.style.strokeWidth = '1';
+            }
         });
     }
     
@@ -642,15 +903,15 @@ class StatesGame {
         this.currentQuestion = 0;
         this.gameStarted = false;
         this.questions = [];
+        this.answeredStates.clear();
         
         // Reset UI safely
-        const startBtn = document.getElementById('start-btn');
         const nextBtn = document.getElementById('next-btn');
         const playAgainBtn = document.getElementById('play-again-btn');
         const feedback = document.getElementById('feedback');
         const options = document.getElementById('options');
         
-        if (startBtn) startBtn.classList.remove('hidden');
+        // Start button stays hidden - game will start automatically
         if (nextBtn) nextBtn.classList.add('hidden');
         if (playAgainBtn) playAgainBtn.classList.add('hidden');
         if (feedback) feedback.innerHTML = '';

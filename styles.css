@@ -102,6 +102,77 @@ body {
     opacity: 0.8;
 }
 
+/* Difficulty Selection */
+.difficulty-selection {
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.difficulty-selection h3 {
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    color: #ffffff;
+    opacity: 0.9;
+}
+
+.difficulty-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.difficulty-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 25px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    min-width: 140px;
+    font-family: inherit;
+    opacity: 0.7;
+}
+
+.difficulty-btn.active {
+    background: rgba(0, 184, 148, 0.2);
+    border-color: #00b894;
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+.difficulty-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    opacity: 1;
+    transform: translateY(-2px);
+}
+
+.difficulty-btn.active:hover {
+    background: rgba(0, 184, 148, 0.3);
+}
+
+.difficulty-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.difficulty-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.difficulty-description {
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
 /* ==================== MAIN GAME INTERFACE ==================== */
 .game-interface {
     position: fixed;
@@ -333,6 +404,24 @@ body {
     justify-content: center;
 }
 
+.close-feedback {
+    color: #f39c12;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.correct-feedback {
+    color: #00b894;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.incorrect-feedback {
+    color: #d63031;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
 /* ==================== BOTTOM TOOLBAR ==================== */
 .bottom-toolbar {
     height: 120px;
@@ -387,6 +476,70 @@ body {
     border-color: #d63031;
 }
 
+/* Text Input Container for Hard Mode */
+.text-input-container {
+    flex: 3;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 0 20px;
+}
+
+.text-answer-input {
+    flex: 1;
+    padding: 15px 20px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    backdrop-filter: blur(10px);
+    font-family: inherit;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.text-answer-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.text-answer-input:focus {
+    border-color: #00b894;
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 0 3px rgba(0, 184, 148, 0.2);
+}
+
+.text-answer-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.submit-btn {
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.submit-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .game-actions {
     flex: 1;
     display: flex;
@@ -419,6 +572,20 @@ body {
 
 .play-again-btn {
     background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+}
+
+/* ==================== MAP STATE ANIMATIONS ==================== */
+@keyframes marchingAnts {
+    0% {
+        stroke-dashoffset: 0;
+    }
+    100% {
+        stroke-dashoffset: 15;
+    }
+}
+
+.current-state {
+    filter: drop-shadow(0 0 10px rgba(255, 235, 59, 0.8));
 }
 
 /* ==================== RESPONSIVE DESIGN ==================== */
