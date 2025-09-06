@@ -1019,7 +1019,7 @@ class StatesGame {
         });
     }
     
-    // Zoom and pan to focus on a specific state/province
+    // Zoom and pan to focus on a specific state/province with smooth transition
     zoomToElement(elementId) {
         if (!this.svgElement) return;
         
@@ -1030,66 +1030,168 @@ class StatesGame {
         }
         
         try {
-            // Special handling for Alaska (US-AK) which might be in a group
+            // First zoom out more to provide better transition
+            const intermediateViewBox = this.calculateIntermediateZoom();
+            
+            // Animate to intermediate zoom first, then to target
+            this.animateViewBox(intermediateViewBox, 400, () => {
+                // After zoom out, zoom in to the target element
+                this.zoomToElementDirect(elementId);
+            });
+            
+        } catch (error) {
+            console.error('Error zooming to element:', error);
+            // Fallback: direct zoom without transition
+            this.zoomToElementDirect(elementId);
+        }
+    }
+    
+    // Calculate intermediate zoom level for smoother transitions
+    calculateIntermediateZoom() {
+        // Zoom out to show more of the map for better transitions
+        const fullViewBox = '0 0 2289 1744';
+        const current = this.svgElement.getAttribute('viewBox') || fullViewBox;
+        const currentValues = current.split(' ').map(parseFloat);
+        
+        // Create an intermediate viewBox that's 1.5x larger than current
+        const scale = 1.5;
+        const centerX = currentValues[0] + currentValues[2] / 2;
+        const centerY = currentValues[1] + currentValues[3] / 2;
+        const newWidth = currentValues[2] * scale;
+        const newHeight = currentValues[3] * scale;
+        const newX = centerX - newWidth / 2;
+        const newY = centerY - newHeight / 2;
+        
+        // Ensure we don't zoom out beyond the full map
+        const clampedX = Math.max(0, Math.min(newX, 2289 - newWidth));
+        const clampedY = Math.max(0, Math.min(newY, 1744 - newHeight));
+        const clampedWidth = Math.min(newWidth, 2289);
+        const clampedHeight = Math.min(newHeight, 1744);
+        
+        return `${clampedX} ${clampedY} ${clampedWidth} ${clampedHeight}`;
+    }
+    
+    // Direct zoom to element without transition (used internally)
+    zoomToElementDirect(elementId) {
+        if (!this.svgElement) return;
+        
+        let element = this.svgElement.querySelector(`#${elementId}`);
+        if (!element) {
+            console.warn(`Element ${elementId} not found`);
+            return;
+        }
+        
+        try {
+            let bbox;
+            
+            // Special handling for Alaska (US-AK) and other complex shapes
             if (elementId === 'US-AK' && element.tagName === 'g') {
-                // For Alaska group, get all child paths and calculate combined bbox
-                const paths = element.querySelectorAll('path');
-                if (paths.length > 0) {
-                    // Use the first path for bounding box calculation
-                    element = paths[0];
-                }
+                // For Alaska group, calculate combined bbox of all child elements
+                bbox = this.getCombinedBoundingBox(element);
+            } else if (element.tagName === 'g') {
+                // For any group, calculate combined bbox
+                bbox = this.getCombinedBoundingBox(element);
+            } else {
+                // Regular element
+                bbox = element.getBBox();
             }
             
-            // Get the bounding box of the element
-            const bbox = element.getBBox();
+            // Enhanced padding calculation for better visibility
+            const elementSize = Math.max(bbox.width, bbox.height);
+            let paddingFactor = 1.2; // Default 120% padding
             
-            // Add more generous padding around the element (80% of the element size, minimum 100 units)
-            const basePadding = Math.max(bbox.width, bbox.height) * 0.8;
-            const minPadding = 100; // Minimum padding for very small states
-            const padding = Math.max(basePadding, minPadding);
+            // Special cases for specific territories that need more space
+            const specialCases = {
+                'US-AK': 1.5, // Alaska needs more padding
+                'US-HI': 1.8, // Hawaii islands need more padding
+                'CA-NU': 1.6, // Nunavut is complex
+                'CA-NT': 1.4  // Northwest Territories
+            };
             
-            const viewX = bbox.x - padding;
-            const viewY = bbox.y - padding;
-            const viewWidth = bbox.width + (padding * 2);
-            const viewHeight = bbox.height + (padding * 2);
+            if (specialCases[elementId]) {
+                paddingFactor = specialCases[elementId];
+            }
             
-            // Set larger minimum zoom dimensions for less aggressive zoom
-            const minZoomWidth = 400;
-            const minZoomHeight = 300;
+            const padding = elementSize * paddingFactor;
+            const minPadding = 120; // Increased minimum padding
+            const finalPadding = Math.max(padding, minPadding);
+            
+            const viewX = bbox.x - finalPadding;
+            const viewY = bbox.y - finalPadding;
+            const viewWidth = bbox.width + (finalPadding * 2);
+            const viewHeight = bbox.height + (finalPadding * 2);
+            
+            // Larger minimum dimensions to ensure visibility
+            const minZoomWidth = 500; // Increased from 400
+            const minZoomHeight = 375; // Increased from 300
             const finalViewWidth = Math.max(viewWidth, minZoomWidth);
             const finalViewHeight = Math.max(viewHeight, minZoomHeight);
             
-            // Get the SVG dimensions
+            // Get the SVG dimensions and aspect ratio
             const svgRect = this.svgElement.getBoundingClientRect();
             const svgAspectRatio = svgRect.width / svgRect.height;
             const bboxAspectRatio = finalViewWidth / finalViewHeight;
             
-            // Adjust dimensions to maintain aspect ratio
+            // Adjust dimensions to maintain aspect ratio and ensure complete visibility
             let finalWidth = finalViewWidth;
             let finalHeight = finalViewHeight;
             let finalX = viewX - (finalViewWidth - viewWidth) / 2;
             let finalY = viewY - (finalViewHeight - viewHeight) / 2;
             
             if (bboxAspectRatio > svgAspectRatio) {
-                // Element is wider, adjust height
+                // Element is wider relative to container, adjust height
                 finalHeight = finalWidth / svgAspectRatio;
                 finalY = finalY - (finalHeight - finalViewHeight) / 2;
             } else {
-                // Element is taller, adjust width
+                // Element is taller relative to container, adjust width
                 finalWidth = finalHeight * svgAspectRatio;
                 finalX = finalX - (finalWidth - finalViewWidth) / 2;
             }
             
+            // Ensure the viewBox stays within SVG bounds
+            finalX = Math.max(0, Math.min(finalX, 2289 - finalWidth));
+            finalY = Math.max(0, Math.min(finalY, 1744 - finalHeight));
+            finalWidth = Math.min(finalWidth, 2289);
+            finalHeight = Math.min(finalHeight, 1744);
+            
             // Create the new viewBox string
             const newViewBox = `${finalX} ${finalY} ${finalWidth} ${finalHeight}`;
             
-            // Animate the viewBox change
-            this.animateViewBox(newViewBox);
+            // Animate the viewBox change with slightly longer duration
+            this.animateViewBox(newViewBox, 600);
             
         } catch (error) {
             console.error('Error zooming to element:', error);
-            // Fallback: just highlight without zooming
         }
+    }
+    
+    // Get combined bounding box for grouped elements (like Alaska)
+    getCombinedBoundingBox(groupElement) {
+        const children = groupElement.querySelectorAll('path, polygon, circle, rect');
+        if (children.length === 0) {
+            return groupElement.getBBox();
+        }
+        
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        
+        children.forEach(child => {
+            try {
+                const bbox = child.getBBox();
+                minX = Math.min(minX, bbox.x);
+                minY = Math.min(minY, bbox.y);
+                maxX = Math.max(maxX, bbox.x + bbox.width);
+                maxY = Math.max(maxY, bbox.y + bbox.height);
+            } catch (e) {
+                // Skip elements that can't provide bbox
+            }
+        });
+        
+        return {
+            x: minX,
+            y: minY,
+            width: maxX - minX,
+            height: maxY - minY
+        };
     }
     
     // Reset zoom to show full map
@@ -1101,14 +1203,17 @@ class StatesGame {
         this.animateViewBox(originalViewBox);
     }
     
-    // Animate viewBox changes smoothly
-    animateViewBox(targetViewBox, duration = 800) {
+    // Animate viewBox changes smoothly with optional callback
+    animateViewBox(targetViewBox, duration = 800, onComplete = null) {
         if (!this.svgElement) return;
         
         const currentViewBox = this.svgElement.getAttribute('viewBox') || '0 0 2289 1744';
         
-        // If viewBox is the same, don't animate
-        if (currentViewBox === targetViewBox) return;
+        // If viewBox is the same, don't animate but still call callback
+        if (currentViewBox === targetViewBox) {
+            if (onComplete) onComplete();
+            return;
+        }
         
         // Parse viewBox values
         const parseViewBox = (vb) => vb.split(' ').map(parseFloat);
@@ -1121,8 +1226,13 @@ class StatesGame {
             const elapsed = currentTime - startTime;
             const progress = Math.min(elapsed / duration, 1);
             
-            // Ease-in-out function for smooth animation
-            const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+            // Enhanced ease-in-out function for smoother animation
+            const easeInOut = (t) => {
+                if (t < 0.5) {
+                    return 2 * t * t;
+                }
+                return -1 + (4 - 2 * t) * t;
+            };
             const easedProgress = easeInOut(progress);
             
             // Interpolate viewBox values
@@ -1137,6 +1247,11 @@ class StatesGame {
             // Continue animation if not complete
             if (progress < 1) {
                 requestAnimationFrame(animate);
+            } else {
+                // Animation complete, call callback if provided
+                if (onComplete) {
+                    onComplete();
+                }
             }
         };
         
@@ -1207,6 +1322,11 @@ class StatesGame {
         // Reset map colors and zoom
         this.resetMapColors();
         this.resetZoom();
+        
+        // Start the game after reset
+        setTimeout(() => {
+            this.startGame();
+        }, 500); // Small delay to allow zoom reset animation to complete
     }
 }
 
