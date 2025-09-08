@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>States & Provinces Game</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="src/styles/main.css">
 </head>
 <body>
     <!-- Mode Selection Screen -->
@@ -69,7 +69,7 @@
     </div>
 
     <!-- Main Game Interface -->
-    <div id="game-interface" class="game-interface hidden">
+    <div id="game-container" class="game-interface" style="display: none;">
         <!-- Top Toolbar -->
         <div class="top-toolbar">
             <div class="toolbar-left">
@@ -78,16 +78,16 @@
             <div class="toolbar-center">
                 <div class="scoreboard-toolbar">
                     <div class="score-item-toolbar correct-score" title="Correct Answers">
-                        <span class="score-number-toolbar" id="correct-display">0</span>
+                        <span class="score-number-toolbar" id="correct-count">0</span>
                         <span class="score-label-toolbar">✅</span>
                     </div>
                     <div class="score-item-toolbar wrong-score" title="Wrong Answers">
-                        <span class="score-number-toolbar" id="wrong-display">0</span>
+                        <span class="score-number-toolbar" id="incorrect-count">0</span>
                         <span class="score-label-toolbar">❌</span>
                     </div>
-                    <div class="score-item-toolbar remaining-score" title="Questions Remaining">
-                        <span class="score-number-toolbar" id="remaining-display">0</span>
-                        <span class="score-label-toolbar">🔄</span>
+                    <div class="score-item-toolbar percentage-score" title="Score Percentage">
+                        <span class="score-number-toolbar" id="score-percentage">0%</span>
+                        <span class="score-label-toolbar">📊</span>
                     </div>
                 </div>
             </div>
@@ -102,29 +102,31 @@
 
         <!-- Map Area -->
         <div class="map-area">
-            <div id="map-wrapper"></div>
+            <div id="map-container"></div>
             <div class="map-overlay">
-                <div class="question-text" id="question-text">What is the highlighted state/province?</div>
+                <div class="progress-text" id="progress">Question 1 of 50</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
                 <div class="feedback-text" id="feedback"></div>
             </div>
         </div>
 
         <!-- Bottom Toolbar -->
         <div class="bottom-toolbar">
+            <div class="question-text" id="current-question">What is the highlighted state/province?</div>
             <div class="answer-options" id="options"></div>
             <div class="text-input-container hidden" id="text-input-container">
                 <input type="text" id="text-answer-input" class="text-answer-input" placeholder="Type the name of the highlighted state/province..." autocomplete="off" spellcheck="false">
                 <button id="submit-answer-btn" class="action-btn submit-btn">Submit</button>
             </div>
             <div class="game-actions">
-                <button id="next-btn" class="action-btn next-btn hidden">Next →</button>
-                <button id="play-again-btn" class="action-btn play-again-btn hidden">Play Again</button>
+                <button id="next-question" class="action-btn next-btn hidden">Next →</button>
+                <button id="reset-game" class="action-btn play-again-btn hidden">Reset Game</button>
             </div>
         </div>
     </div>
 
-    <script src="sounds.js"></script>
-    <script src="voice.js"></script>
-    <script src="game.js"></script>
+    <script type="module" src="src/main.ts"></script>
 </body>
 </html>

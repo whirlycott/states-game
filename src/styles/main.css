@@ -1,0 +1,884 @@
+/* ABOUTME: Full-screen UI styling for the States & Provinces educational game */
+/* ABOUTME: Modern layout with persistent toolbars and immersive map experience */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600;1,700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #0f0f23;
+    color: #ffffff;
+    overflow: auto; /* Allow scrolling */
+    min-height: 100vh; /* Use min-height instead of fixed height */
+    font-display: swap; /* Ensure font swapping works properly */
+}
+
+/* Utility Classes */
+.hidden {
+    display: none !important;
+}
+
+/* ==================== MODE SELECTION SCREEN ==================== */
+.mode-selection {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+    z-index: 1000;
+    overflow-y: auto; /* Allow vertical scrolling */
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* Start from top to allow scrolling */
+}
+
+.mode-selection-content {
+    text-align: center;
+    max-width: 600px;
+    padding: 40px 20px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: auto; /* Center horizontally, but allow vertical flow */
+    min-height: fit-content;
+}
+
+.mode-selection h1 {
+    font-size: 3rem;
+    font-weight: 900;
+    margin-bottom: 20px;
+    color: #ffffff;
+    text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.mode-selection p {
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+    opacity: 0.9;
+    line-height: 1.4;
+}
+
+/* Instructions for better UX */
+.setup-instructions {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 35px;
+    backdrop-filter: blur(10px);
+}
+
+.setup-instructions h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #00b894;
+}
+
+.setup-step {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.setup-step-number {
+    background: #00b894;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.setup-step:last-child {
+    margin-bottom: 0;
+}
+
+.mode-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+    background: rgba(74, 144, 226, 0.1);
+    border: 1px solid rgba(74, 144, 226, 0.2);
+    border-radius: 15px;
+    padding: 25px;
+    position: relative;
+}
+
+.mode-buttons::before {
+    content: "STEP 2";
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    background: #4a90e2;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.mode-buttons.step-completed::before {
+    content: "STEP 2 ✓";
+    background: #27ae60;
+    transform: scale(1.05);
+}
+
+.mode-buttons.step-completed {
+    border-color: rgba(39, 174, 96, 0.4);
+    background: rgba(39, 174, 96, 0.1);
+}
+
+.mode-buttons h3 {
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    color: #ffffff;
+    opacity: 0.9;
+    width: 100%;
+    text-align: center;
+}
+
+.mode-select-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    min-width: 280px;
+    font-family: inherit;
+    position: relative;
+}
+
+.mode-select-btn.selected {
+    background: rgba(74, 144, 226, 0.3);
+    border-color: #4a90e2;
+    transform: scale(1.02);
+}
+
+.mode-select-btn.selected::after {
+    content: "✓";
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: #4a90e2;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.mode-select-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.mode-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.mode-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.mode-description {
+    font-size: 1rem;
+    opacity: 0.8;
+}
+
+/* Difficulty Selection */
+.difficulty-selection {
+    margin-bottom: 40px;
+    text-align: center;
+    background: rgba(0, 184, 148, 0.1);
+    border: 1px solid rgba(0, 184, 148, 0.2);
+    border-radius: 15px;
+    padding: 25px;
+    position: relative;
+}
+
+.difficulty-selection::before {
+    content: "STEP 1";
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    background: #00b894;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.difficulty-selection.step-completed::before {
+    content: "STEP 1 ✓";
+    background: #27ae60;
+    transform: scale(1.05);
+}
+
+.difficulty-selection.step-completed {
+    border-color: rgba(39, 174, 96, 0.4);
+    background: rgba(39, 174, 96, 0.1);
+}
+
+.difficulty-selection h3 {
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    color: #ffffff;
+    opacity: 0.9;
+}
+
+.difficulty-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.difficulty-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 25px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    min-width: 140px;
+    font-family: inherit;
+    opacity: 0.7;
+}
+
+.difficulty-btn.active {
+    background: rgba(0, 184, 148, 0.2);
+    border-color: #00b894;
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+.difficulty-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    opacity: 1;
+    transform: translateY(-2px);
+}
+
+.difficulty-btn.active:hover {
+    background: rgba(0, 184, 148, 0.3);
+}
+
+.difficulty-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.difficulty-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.difficulty-description {
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+/* ==================== MAIN GAME INTERFACE ==================== */
+.game-interface {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #0f0f23;
+}
+
+/* ==================== TOP TOOLBAR ==================== */
+.top-toolbar {
+    height: 70px;
+    background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    z-index: 100;
+}
+
+.toolbar-left {
+    flex: 1;
+}
+
+.game-title {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #ffffff;
+}
+
+.toolbar-center {
+    flex: 2;
+    display: flex;
+    justify-content: center;
+}
+
+.scoreboard-toolbar {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.score-item-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    border-radius: 16px;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 90px;
+    justify-content: center;
+}
+
+.score-item-toolbar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    z-index: -1;
+}
+
+.score-item-toolbar.correct-score {
+    background: linear-gradient(135deg, rgba(0, 184, 148, 0.2) 0%, rgba(0, 206, 201, 0.15) 100%);
+    border-color: rgba(0, 184, 148, 0.4);
+    box-shadow: 0 0 20px rgba(0, 184, 148, 0.1);
+}
+
+.score-item-toolbar.wrong-score {
+    background: linear-gradient(135deg, rgba(214, 48, 49, 0.2) 0%, rgba(232, 67, 147, 0.15) 100%);
+    border-color: rgba(214, 48, 49, 0.4);
+    box-shadow: 0 0 20px rgba(214, 48, 49, 0.1);
+}
+
+.score-item-toolbar.remaining-score {
+    background: linear-gradient(135deg, rgba(116, 185, 255, 0.2) 0%, rgba(162, 155, 254, 0.15) 100%);
+    border-color: rgba(116, 185, 255, 0.4);
+    box-shadow: 0 0 20px rgba(116, 185, 255, 0.1);
+}
+
+.score-item-toolbar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.score-item-toolbar.correct-score:hover {
+    box-shadow: 0 8px 25px rgba(0, 184, 148, 0.25);
+}
+
+.score-item-toolbar.wrong-score:hover {
+    box-shadow: 0 8px 25px rgba(214, 48, 49, 0.25);
+}
+
+.score-item-toolbar.remaining-score:hover {
+    box-shadow: 0 8px 25px rgba(116, 185, 255, 0.25);
+}
+
+.score-number-toolbar {
+    font-size: 1.4rem;
+    font-weight: 900;
+    min-width: 30px;
+    text-align: center;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.score-label-toolbar {
+    font-size: 1.2rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    transition: all 0.3s ease;
+}
+
+/* Number pulse animation when score changes */
+@keyframes scorePulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+
+.score-number-toolbar.updated {
+    animation: scorePulse 0.6s ease;
+}
+
+.toolbar-right {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.game-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.control-btn {
+    width: 45px;
+    height: 45px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.control-btn.muted {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* ==================== MAP AREA ==================== */
+.map-area {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #1a1a2e;
+}
+
+#map-wrapper,
+#map-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+#map-wrapper svg,
+#map-container svg {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    transition: opacity 0.2s ease;
+}
+
+/* Hide state/province abbreviations */
+#map-wrapper svg text,
+#map-container svg text {
+    display: none;
+}
+
+.map-overlay {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 10;
+}
+
+.question-text {
+    color: #ffffff;
+    font-size: 1.3rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 20px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.5px;
+}
+
+.feedback-text {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s ease;
+}
+
+.feedback-text:empty,
+.feedback-text.hidden-feedback {
+    display: none;
+}
+
+.close-feedback {
+    color: #f39c12;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.correct-feedback {
+    color: #00b894;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.incorrect-feedback {
+    color: #d63031;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* ==================== BOTTOM TOOLBAR ==================== */
+.bottom-toolbar {
+    height: 120px;
+    background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+    z-index: 100;
+}
+
+.answer-options {
+    flex: 3;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    padding: 0 20px;
+}
+
+.option-btn {
+    padding: 15px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    font-family: inherit;
+    text-align: center;
+}
+
+.option-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+}
+
+.option-btn:disabled {
+    cursor: not-allowed;
+}
+
+.option-btn.correct {
+    background: rgba(0, 184, 148, 0.8);
+    border-color: #00b894;
+}
+
+.option-btn.incorrect {
+    background: rgba(214, 48, 49, 0.8);
+    border-color: #d63031;
+}
+
+/* Text Input Container for Hard Mode */
+.text-input-container {
+    flex: 3;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 0 20px;
+}
+
+.text-answer-input {
+    flex: 1;
+    padding: 15px 20px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    backdrop-filter: blur(10px);
+    font-family: inherit;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.text-answer-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.text-answer-input:focus {
+    border-color: #00b894;
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 0 3px rgba(0, 184, 148, 0.2);
+}
+
+.text-answer-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.submit-btn {
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.submit-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.game-actions {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    padding-left: 20px;
+}
+
+.action-btn {
+    padding: 15px 25px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.action-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.next-btn {
+    background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+}
+
+.play-again-btn {
+    background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+}
+
+/* ==================== MAP STATE ANIMATIONS ==================== */
+@keyframes marchingAnts {
+    0% {
+        stroke-dashoffset: 0;
+    }
+    100% {
+        stroke-dashoffset: 15;
+    }
+}
+
+.current-state {
+    filter: drop-shadow(0 0 10px rgba(255, 235, 59, 0.8));
+}
+
+/* ==================== RESPONSIVE DESIGN ==================== */
+@media (max-width: 768px) {
+    .mode-selection h1 {
+        font-size: 2.2rem;
+    }
+    
+    .mode-select-btn {
+        min-width: 250px;
+        padding: 25px 30px;
+    }
+    
+    .top-toolbar {
+        height: 60px;
+        padding: 0 15px;
+    }
+    
+    .game-title {
+        font-size: 1.2rem;
+    }
+    
+    .scoreboard-toolbar {
+        gap: 12px;
+    }
+    
+    .score-item-toolbar {
+        padding: 8px 14px;
+        min-width: 75px;
+        gap: 10px;
+    }
+    
+    .score-number-toolbar {
+        font-size: 1.1rem;
+        min-width: 25px;
+    }
+    
+    .score-label-toolbar {
+        font-size: 1rem;
+    }
+    
+    .control-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .bottom-toolbar {
+        height: 100px;
+        flex-direction: column;
+        padding: 10px 15px;
+    }
+    
+    .answer-options {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 0;
+        margin-bottom: 10px;
+    }
+    
+    .option-btn {
+        padding: 12px 16px;
+        font-size: 0.95rem;
+    }
+    
+    .game-actions {
+        padding-left: 0;
+    }
+    
+    .action-btn {
+        padding: 12px 20px;
+        font-size: 1rem;
+    }
+    
+    .question-text {
+        font-size: 1.1rem;
+        margin-bottom: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .mode-select-btn {
+        min-width: 220px;
+        padding: 20px 25px;
+    }
+    
+    .mode-icon {
+        font-size: 2.5rem;
+    }
+    
+    .mode-title {
+        font-size: 1.3rem;
+    }
+    
+    .top-toolbar {
+        flex-direction: column;
+        height: 80px;
+        padding: 5px 10px;
+    }
+    
+    .toolbar-left, .toolbar-center, .toolbar-right {
+        flex: none;
+    }
+    
+    .game-title {
+        font-size: 1rem;
+        margin-bottom: 5px;
+    }
+    
+    .scoreboard-toolbar {
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .score-item-toolbar {
+        padding: 6px 10px;
+        min-width: 65px;
+        gap: 6px;
+        border-radius: 12px;
+    }
+    
+    .score-number-toolbar {
+        font-size: 0.95rem;
+        min-width: 20px;
+    }
+    
+    .score-label-toolbar {
+        font-size: 0.9rem;
+    }
+    
+    .bottom-toolbar {
+        height: 140px;
+        padding: 10px;
+    }
+}
