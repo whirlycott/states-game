@@ -150,6 +150,27 @@ export class RetroSounds {
         }
     }
     
+    async playHint(): Promise<void> {
+        if (!await this.ensureAudioContext() || !this.audioContext) return;
+        
+        // Gentle ascending arpeggio to indicate "try again"
+        const notes = [440, 554.37, 659.25]; // A4, C#5, E5
+        
+        notes.forEach((frequency, index) => {
+            const { oscillator, gainNode } = this.createOscillator(frequency, 'sine');
+            
+            const startTime = this.audioContext!.currentTime + (index * 0.15);
+            const endTime = startTime + 0.2;
+            
+            gainNode.gain.setValueAtTime(0, startTime);
+            gainNode.gain.linearRampToValueAtTime(0.15, startTime + 0.02);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, endTime);
+            
+            oscillator.start(startTime);
+            oscillator.stop(endTime);
+        });
+    }
+    
     setEnabled(enabled: boolean): void {
         this.enabled = enabled;
     }

@@ -220,6 +220,20 @@ export class EdgeyVoice {
         this.volume = Math.max(0, Math.min(1.0, volume));
     }
     
+    sayEncouragement(): void {
+        const encouragements = [
+            "Ooh, so close! Try again, you're almost there!",
+            "Almost got it! Give it another shot, champ!",
+            "You're so close I can taste it! Try once more!",
+            "Nearly there! One more try and you'll nail it!",
+            "Close call! Your next guess is gonna be perfect!",
+            "You're on the right track! Try again, superstar!"
+        ];
+        
+        const randomEncouragement = encouragements[Math.floor(Math.random() * encouragements.length)];
+        this.speak(randomEncouragement);
+    }
+    
     stop(): void {
         this.synth.cancel();
     }

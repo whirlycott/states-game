@@ -5,6 +5,7 @@ import type { GameMode, Question, Difficulty, ScoreboardData } from './types.js'
 import { usStates, canadianProvinces, adjacencyMap } from './data.js';
 import { RetroSounds } from '../audio/RetroSounds.js';
 import { EdgeyVoice } from '../audio/EdgeyVoice.js';
+import { isCloseMatch, normalizeGeographicName } from './utils.js';
 import mapSvg from '../assets/Usa_and_Canada_with_names_natural.svg?url';
 
 export class StatesGame {
@@ -20,6 +21,7 @@ export class StatesGame {
     private answeredStates = new Map<string, 'correct' | 'incorrect'>();
     private svgLoaded = false;
     private difficulty: Difficulty = 'easy';
+    private hasRetried = false;  // Track if user has already used their retry for this question
     
     // Color palette for map coloring
     private readonly colorPalette = ['#f3f9b2', '#e39bdb', '#4ca8bc', '#1d27a2', '#4768ae', '#e15c4f', '#fcffcd', '#f560e2'];
@@ -208,6 +210,8 @@ export class StatesGame {
         this.currentQuestion = 0;
         this.correctAnswers = 0;
         this.wrongAnswers = 0;
+        this.hasRetried = false;  // Reset retry state for new game
+        this.resetSubmitButton();  // Reset button text for new game
         this.answeredStates.clear();
 
         // Hide mode selection and show game
@@ -453,21 +457,77 @@ export class StatesGame {
         const correctAnswer = currentQuestion.stateName;
 
         // Normalize both answers for comparison
-        const normalizedUser = userAnswer.toLowerCase();
-        const normalizedCorrect = correctAnswer.toLowerCase();
+        const normalizedUser = normalizeGeographicName(userAnswer);
+        const normalizedCorrect = normalizeGeographicName(correctAnswer);
 
         const isCorrect = normalizedUser === normalizedCorrect;
 
-        // Disable input and submit button
-        input.disabled = true;
-        const submitBtn = document.getElementById('submit-answer-btn') as HTMLButtonElement;
-        if (submitBtn) submitBtn.disabled = true;
-
-        // Process the answer
         if (isCorrect) {
+            // Clear any retry indicators
+            this.clearRetryIndicator();
+            
+            // Disable input and submit button
+            input.disabled = true;
+            const submitBtn = document.getElementById('submit-answer-btn') as HTMLButtonElement;
+            if (submitBtn) submitBtn.disabled = true;
+
             this.handleCorrectAnswer(currentQuestion.stateId);
+        } else if (!this.hasRetried && this.difficulty === 'hard' && isCloseMatch(userAnswer, correctAnswer)) {
+            // Give the user a second chance if their answer is close
+            this.hasRetried = true;
+            
+            // Show visual indication this is second chance
+            this.showSecondChanceIndicator();
+            
+            // Keep input as-is for user to modify, just refocus
+            input.focus();
+            
+            // Audio-only encouragement
+            this.voice.sayEncouragement();
+            
+            // Play a gentle hint sound
+            this.sounds.playHint();
         } else {
+            // Clear any retry indicators
+            this.clearRetryIndicator();
+            
+            // Disable input and submit button
+            input.disabled = true;
+            const submitBtn = document.getElementById('submit-answer-btn') as HTMLButtonElement;
+            if (submitBtn) submitBtn.disabled = true;
+
             this.handleWrongAnswer(currentQuestion.stateId);
+        }
+    }
+
+    private showSecondChanceIndicator(): void {
+        const feedbackDiv = document.getElementById('feedback');
+        const submitBtn = document.getElementById('submit-answer-btn') as HTMLButtonElement;
+        
+        if (feedbackDiv) {
+            feedbackDiv.textContent = "Second chance!";
+            feedbackDiv.className = 'feedback-text retry-hint';
+            feedbackDiv.style.display = 'block';
+        }
+        
+        if (submitBtn) {
+            submitBtn.textContent = 'Try Again';
+        }
+    }
+    
+    private resetSubmitButton(): void {
+        const submitBtn = document.getElementById('submit-answer-btn') as HTMLButtonElement;
+        if (submitBtn) {
+            submitBtn.textContent = 'Submit';
+        }
+    }
+    
+    private clearRetryIndicator(): void {
+        const feedbackDiv = document.getElementById('feedback');
+        if (feedbackDiv && feedbackDiv.textContent === 'Second chance!') {
+            feedbackDiv.textContent = '';
+            feedbackDiv.style.display = 'none';
+            feedbackDiv.className = 'feedback-text';
         }
     }
 
@@ -570,6 +630,8 @@ export class StatesGame {
 
     nextQuestion(): void {
         this.currentQuestion++;
+        this.hasRetried = false;  // Reset retry state for next question
+        this.resetSubmitButton();  // Reset button text for next question
         
         if (this.currentQuestion >= this.questions.length) {
             this.endGame();

@@ -83,7 +83,7 @@ describe('EdgeyVoice', () => {
     it('should handle case when no voices are initially available', () => {
       mockSpeechSynthesis.getVoices.mockReturnValue([]);
       
-      const edgy = new EdgeyVoice();
+      new EdgeyVoice();
       expect(mockSpeechSynthesis.addEventListener).toHaveBeenCalledWith('voiceschanged', expect.any(Function));
     });
 
