@@ -5,24 +5,123 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { JSDOM } from 'jsdom';
 import { StatesGame } from './StatesGame.js';
 
+// Mock Web Audio API
+const mockOscillatorNode = {
+    type: 'square' as OscillatorType,
+    frequency: {
+        setValueAtTime: vi.fn(),
+        linearRampToValueAtTime: vi.fn()
+    },
+    connect: vi.fn(),
+    start: vi.fn(),
+    stop: vi.fn()
+};
+
+const mockGainNode = {
+    gain: {
+        setValueAtTime: vi.fn(),
+        linearRampToValueAtTime: vi.fn(),
+        exponentialRampToValueAtTime: vi.fn()
+    },
+    connect: vi.fn()
+};
+
+const mockAudioContext = {
+    currentTime: 0,
+    state: 'running' as AudioContextState,
+    resume: vi.fn().mockResolvedValue(undefined),
+    suspend: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+    createOscillator: vi.fn(() => ({ ...mockOscillatorNode })),
+    createGain: vi.fn(() => ({ ...mockGainNode })),
+    destination: {} as AudioDestinationNode
+};
+
+// Mock AudioContext constructor
+const MockAudioContext = vi.fn(() => mockAudioContext);
+Object.defineProperty(window, 'AudioContext', {
+    value: MockAudioContext,
+    writable: true
+});
+
+// Mock webkitAudioContext for Safari
+Object.defineProperty(window, 'webkitAudioContext', {
+    value: MockAudioContext,
+    writable: true
+});
+
+// Mock SpeechSynthesis and related APIs
+const mockUtterance = {
+    text: '',
+    voice: null,
+    rate: 1,
+    pitch: 1,
+    volume: 1,
+    onerror: null,
+    onstart: null,
+    onend: null
+};
+
+const mockVoices = [
+    { name: 'Microsoft David - English (United States)', lang: 'en-US', default: false, localService: true, voiceURI: 'David' },
+    { name: 'Alex', lang: 'en-US', default: false, localService: true, voiceURI: 'Alex' }
+];
+
+const mockSpeechSynthesis = {
+    speak: vi.fn(),
+    cancel: vi.fn(),
+    getVoices: vi.fn(() => mockVoices),
+    speaking: false,
+    pending: false,
+    paused: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn()
+};
+
+// Mock window.speechSynthesis
+Object.defineProperty(window, 'speechSynthesis', {
+    value: mockSpeechSynthesis,
+    writable: true
+});
+
+// Mock SpeechSynthesisUtterance constructor
+global.SpeechSynthesisUtterance = vi.fn(() => ({ ...mockUtterance })) as any;
+
 describe('Retry Integration Tests', () => {
     let dom: JSDOM;
     let game: StatesGame;
 
     beforeEach(async () => {
-        // Setup DOM environment
+        // Setup DOM environment FIRST
         dom = new JSDOM(`
             <!DOCTYPE html>
             <html>
             <body>
-                <div id="mode-selection" class="hidden"></div>
-                <div id="game-container">
+                <div id="map-container"></div>
+                <div id="mode-selection" style="display: flex;">
+                    <button id="select-easy"></button>
+                    <button id="select-hard"></button>
+                    <button id="select-us"></button>
+                    <button id="select-canada"></button>
+                    <button id="select-both"></button>
+                </div>
+                <div id="game-container" style="display: none;">
+                    <div id="current-question"></div>
+                    <div id="progress"></div>
+                    <div id="options"></div>
                     <div id="feedback" class="feedback-text"></div>
-                    <div id="text-input-container">
-                        <input id="text-answer-input" type="text" />
+                    <div id="text-input-container" class="hidden">
+                        <input id="text-answer-input" type="text">
                         <button id="submit-answer-btn">Submit</button>
                     </div>
+                    <button id="back-to-menu"></button>
+                    <button id="reset-game"></button>
+                    <button id="next-question"></button>
                 </div>
+                <div id="correct-count">0</div>
+                <div id="incorrect-count">0</div>
+                <div id="score-percentage">0%</div>
+                <div id="progress-bar" style="width: 0%;"></div>
             </body>
             </html>
         `);
@@ -39,6 +138,63 @@ describe('Retry Integration Tests', () => {
         global.HTMLInputElement = dom.window.HTMLInputElement;
         // @ts-ignore
         global.HTMLButtonElement = dom.window.HTMLButtonElement;
+        
+        // NOW set up audio API mocks on the window object
+        // @ts-ignore
+        dom.window.AudioContext = MockAudioContext;
+        // @ts-ignore
+        dom.window.webkitAudioContext = MockAudioContext;
+        // @ts-ignore  
+        dom.window.speechSynthesis = mockSpeechSynthesis;
+        // @ts-ignore
+        dom.window.SpeechSynthesisUtterance = global.SpeechSynthesisUtterance;
+        
+        // Reset all mocks
+        vi.clearAllMocks();
+        
+        // Reset mock audio context state  
+        mockAudioContext.currentTime = 0;
+        mockAudioContext.state = 'running';
+        mockAudioContext.resume = vi.fn().mockResolvedValue(undefined);
+        mockAudioContext.createOscillator = vi.fn();
+        mockAudioContext.createGain = vi.fn();
+        
+        // Create fresh mock objects for each test
+        const freshOscillatorNode = {
+            type: 'square' as OscillatorType,
+            frequency: {
+                setValueAtTime: vi.fn(),
+                linearRampToValueAtTime: vi.fn()
+            },
+            connect: vi.fn(),
+            start: vi.fn(),
+            stop: vi.fn()
+        };
+        
+        const freshGainNode = {
+            gain: {
+                setValueAtTime: vi.fn(),
+                linearRampToValueAtTime: vi.fn(),
+                exponentialRampToValueAtTime: vi.fn()
+            },
+            connect: vi.fn()
+        };
+        
+        // Update references
+        Object.assign(mockOscillatorNode, freshOscillatorNode);
+        Object.assign(mockGainNode, freshGainNode);
+        
+        mockAudioContext.createOscillator.mockReturnValue(mockOscillatorNode);
+        mockAudioContext.createGain.mockReturnValue(mockGainNode);
+        
+        // Ensure AudioContext constructor is properly mocked
+        MockAudioContext.mockReturnValue(mockAudioContext);
+        
+        // Reset speech synthesis mocks
+        mockSpeechSynthesis.speak.mockClear();
+        mockSpeechSynthesis.cancel.mockClear();
+        mockSpeechSynthesis.getVoices.mockReturnValue(mockVoices);
+        (global.SpeechSynthesisUtterance as any).mockReturnValue({ ...mockUtterance });
         
         // Mock fetch for SVG loading
         // @ts-ignore

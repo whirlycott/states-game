@@ -220,15 +220,40 @@ export class EdgeyVoice {
         this.volume = Math.max(0, Math.min(1.0, volume));
     }
     
-    sayEncouragement(): void {
-        const encouragements = [
-            "Ooh, so close! Try again, you're almost there!",
-            "Almost got it! Give it another shot, champ!",
-            "You're so close I can taste it! Try once more!",
-            "Nearly there! One more try and you'll nail it!",
-            "Close call! Your next guess is gonna be perfect!",
-            "You're on the right track! Try again, superstar!"
-        ];
+    sayEncouragement(retryType?: 'close' | 'lucky'): void {
+        let encouragements: string[];
+        
+        if (retryType === 'close') {
+            // For close answers - emphasize they're almost there
+            encouragements = [
+                "Ooh, so close! Try again, you're almost there!",
+                "Almost got it! Give it another shot, champ!",
+                "You're so close I can taste it! Try once more!",
+                "Nearly there! One more try and you'll nail it!",
+                "Close call! Your next guess is gonna be perfect!",
+                "You're on the right track! Try again, superstar!"
+            ];
+        } else if (retryType === 'lucky') {
+            // For lucky breaks - emphasize they got a break
+            encouragements = [
+                "Lucky break! Don't waste it - give it another shot!",
+                "The geography gods smile upon you! Try again!",
+                "Fortune favors the bold! Take another swing!",
+                "Your lucky day! Make this second chance count!",
+                "The stars aligned for you! Try once more!",
+                "Fate gave you a mulligan! Don't blow it, champ!"
+            ];
+        } else {
+            // Default encouragements for backwards compatibility
+            encouragements = [
+                "Ooh, so close! Try again, you're almost there!",
+                "Almost got it! Give it another shot, champ!",
+                "You're so close I can taste it! Try once more!",
+                "Nearly there! One more try and you'll nail it!",
+                "Close call! Your next guess is gonna be perfect!",
+                "You're on the right track! Try again, superstar!"
+            ];
+        }
         
         const randomEncouragement = encouragements[Math.floor(Math.random() * encouragements.length)];
         this.speak(randomEncouragement);

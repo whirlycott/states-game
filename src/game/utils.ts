@@ -58,6 +58,37 @@ export function isCloseMatch(userInput: string, correctAnswer: string): boolean 
 }
 
 /**
+ * Check if an answer with high Levenshtein distance should get a random second chance
+ * Returns true 30% of the time for answers that are far off but not completely wrong
+ */
+export function shouldGetRandomSecondChance(userInput: string, correctAnswer: string): boolean {
+    const distance = levenshteinDistance(userInput.toLowerCase(), correctAnswer.toLowerCase());
+    const length = correctAnswer.length;
+    
+    // Only consider for random chance if distance is high (not close match)
+    let isHighDistance = false;
+    if (length <= 6) {
+        isHighDistance = distance > 2; // More than 2 chars off for short names
+    } else if (length <= 12) {
+        isHighDistance = distance > 3; // More than 3 chars off for medium names
+    } else {
+        isHighDistance = distance > 4; // More than 4 chars off for long names
+    }
+    
+    // Only give random chance if it's high distance but not completely unrelated
+    // (e.g., don't give second chance if distance is more than 60% of the word length)
+    const maxReasonableDistance = Math.floor(length * 0.6);
+    const isReasonable = distance <= maxReasonableDistance;
+    
+    if (isHighDistance && isReasonable) {
+        // 30% chance of getting a second try
+        return Math.random() < 0.3;
+    }
+    
+    return false;
+}
+
+/**
  * Normalize geographic names for comparison
  * Handles common variations and abbreviations
  */
