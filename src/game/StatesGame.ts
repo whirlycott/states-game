@@ -550,6 +550,7 @@ export class StatesGame {
         this.svgElement.querySelectorAll('.highlighted, .current-state').forEach(el => {
             el.classList.remove('highlighted', 'current-state');
             (el as HTMLElement).style.strokeWidth = '';
+            (el as HTMLElement).style.stroke = '';
             (el as HTMLElement).style.strokeDasharray = '';
             (el as HTMLElement).style.animation = '';
         });
@@ -559,10 +560,26 @@ export class StatesGame {
         if (targetElement) {
             targetElement.classList.add('highlighted', 'current-state');
             
-            // Add marching ants animation
-            (targetElement as HTMLElement).style.strokeWidth = '3';
-            (targetElement as HTMLElement).style.strokeDasharray = '10,5';
-            (targetElement as HTMLElement).style.animation = 'marchingAnts 1s linear infinite';
+            // Create multi-colored marching ants pattern
+            this.createMultiColorPattern();
+            
+            // Add marching ants animation with multi-colored pattern
+            if (targetElement.tagName === 'g') {
+                // For group elements (like Alaska), apply to all child path elements
+                const pathElements = targetElement.querySelectorAll('path');
+                pathElements.forEach(pathEl => {
+                    (pathEl as HTMLElement).style.strokeWidth = '3';
+                    (pathEl as HTMLElement).style.stroke = 'url(#multiColorPattern)';
+                    (pathEl as HTMLElement).style.strokeDasharray = '3,3';
+                    (pathEl as HTMLElement).style.animation = 'marchingAnts 1s linear infinite';
+                });
+            } else {
+                // For individual path elements
+                (targetElement as HTMLElement).style.strokeWidth = '3';
+                (targetElement as HTMLElement).style.stroke = 'url(#multiColorPattern)';
+                (targetElement as HTMLElement).style.strokeDasharray = '3,3';
+                (targetElement as HTMLElement).style.animation = 'marchingAnts 1s linear infinite';
+            }
         }
     }
 
@@ -831,6 +848,46 @@ export class StatesGame {
         // Update button appearance  
         voiceToggleBtn.textContent = isEnabled ? '🤐' : '🗣️';
         voiceToggleBtn.title = isEnabled ? 'Enable Voice' : 'Disable Voice';
+    }
+
+    private createMultiColorPattern(): void {
+        if (!this.svgElement) return;
+        
+        // Check if pattern already exists
+        let defs = this.svgElement.querySelector('defs');
+        if (!defs) {
+            defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            this.svgElement.insertBefore(defs, this.svgElement.firstChild);
+        }
+        
+        // Remove existing pattern if it exists
+        const existingPattern = defs.querySelector('#multiColorPattern');
+        if (existingPattern) {
+            existingPattern.remove();
+        }
+        
+        // Create new pattern
+        const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+        pattern.setAttribute('id', 'multiColorPattern');
+        pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+        pattern.setAttribute('width', '15');
+        pattern.setAttribute('height', '3');
+        
+        // Colors for the pattern
+        const colors = ['#04e762', '#f5b700', '#dc0073', '#008bf8', '#89fc00'];
+        
+        // Create colored rectangles for each segment
+        colors.forEach((color, index) => {
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', (index * 3).toString());
+            rect.setAttribute('y', '0');
+            rect.setAttribute('width', '3');
+            rect.setAttribute('height', '3');
+            rect.setAttribute('fill', color);
+            pattern.appendChild(rect);
+        });
+        
+        defs.appendChild(pattern);
     }
 
     // Zoom and pan to focus on a specific state/province with smooth transition

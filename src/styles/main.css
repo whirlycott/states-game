@@ -762,6 +762,13 @@ body {
     }
 }
 
+/* Multi-colored marching ants using SVG pattern */
+.multi-colored-ants {
+    stroke-dasharray: 3,3,3,3,3,3;
+    stroke: url(#multiColorPattern);
+    animation: marchingAnts 1s linear infinite;
+}
+
 .current-state {
     filter: drop-shadow(0 0 10px rgba(255, 235, 59, 0.8));
 }
