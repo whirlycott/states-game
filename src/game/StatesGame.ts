@@ -677,17 +677,8 @@ export class StatesGame {
         this.voice.announceGameEnd(this.correctAnswers, this.questions.length, percentage);
         this.sounds.playGameEnd(percentage);
         
-        // Show final results
-        const resultElement = document.getElementById('current-question');
-        if (resultElement) {
-            resultElement.innerHTML = `
-                <div class="game-complete">
-                    <h2>🎉 Game Complete!</h2>
-                    <p>You scored ${this.correctAnswers} out of ${this.questions.length} (${percentage}%)</p>
-                    <p>${this.getPerformanceMessage(percentage)}</p>
-                </div>
-            `;
-        }
+        // Show completion modal instead of in the question area
+        this.showCompletionModal(percentage);
     }
 
     private getPerformanceMessage(percentage: number): string {
@@ -695,6 +686,70 @@ export class StatesGame {
         if (percentage >= 75) return "Great job! You know your states and provinces! 🌟";
         if (percentage >= 60) return "Good effort! Keep practicing to improve! 👍";
         return "Keep studying! You'll get better with practice! 📚";
+    }
+
+    private showCompletionModal(percentage: number): void {
+        const modal = document.getElementById('game-completion-modal');
+        const scoreElement = document.getElementById('modal-score');
+        const messageElement = document.getElementById('modal-message');
+        
+        if (modal && scoreElement && messageElement) {
+            // Update modal content
+            scoreElement.textContent = `You scored ${this.correctAnswers} out of ${this.questions.length} (${percentage}%)`;
+            messageElement.textContent = this.getPerformanceMessage(percentage);
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            
+            // Set up event listeners for modal buttons
+            this.setupModalEventListeners();
+        }
+    }
+
+    private setupModalEventListeners(): void {
+        const modal = document.getElementById('game-completion-modal');
+        const closeBtn = document.getElementById('modal-close');
+        const playAgainBtn = document.getElementById('modal-play-again');
+        const backToMenuBtn = document.getElementById('modal-back-to-menu');
+        const backdrop = modal?.querySelector('.modal-backdrop');
+
+        // Close modal handlers
+        const closeModal = () => {
+            modal?.classList.add('hidden');
+        };
+
+        // Remove any existing listeners to prevent duplicates
+        closeBtn?.removeEventListener('click', closeModal);
+        backdrop?.removeEventListener('click', closeModal);
+        
+        // Add listeners
+        closeBtn?.addEventListener('click', closeModal);
+        backdrop?.addEventListener('click', closeModal);
+
+        // Play Again button
+        const handlePlayAgain = () => {
+            closeModal();
+            this.resetGame();
+        };
+        playAgainBtn?.removeEventListener('click', handlePlayAgain);
+        playAgainBtn?.addEventListener('click', handlePlayAgain);
+
+        // Back to Menu button  
+        const handleBackToMenu = () => {
+            closeModal();
+            this.backToMenu();
+        };
+        backToMenuBtn?.removeEventListener('click', handleBackToMenu);
+        backToMenuBtn?.addEventListener('click', handleBackToMenu);
+
+        // ESC key to close modal
+        const handleEscKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                document.removeEventListener('keydown', handleEscKey);
+            }
+        };
+        document.addEventListener('keydown', handleEscKey);
     }
 
     resetGame(): void {

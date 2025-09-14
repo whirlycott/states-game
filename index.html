@@ -127,6 +127,25 @@
         </div>
     </div>
 
+    <!-- Game Completion Modal -->
+    <div id="game-completion-modal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">🎉 Game Complete!</h2>
+                <button id="modal-close" class="modal-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-score" class="modal-score"></div>
+                <div id="modal-message" class="modal-message"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-play-again" class="action-btn primary">Play Again</button>
+                <button id="modal-back-to-menu" class="action-btn secondary">Back to Menu</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="src/main.ts"></script>
 </body>
 </html>
