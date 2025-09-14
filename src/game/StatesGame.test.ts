@@ -1031,4 +1031,225 @@ describe('StatesGame Coloring Functionality', () => {
       });
     });
   });
+
+  describe('Marching Ants Animation Bug', () => {
+    beforeEach(async () => {
+      await new Promise(resolve => setTimeout(resolve, 200));
+    });
+
+    it('should immediately clear marching ants animation when correct answer is given in hard mode', async () => {
+      // Set up hard mode US game
+      game.selectDifficulty('hard');
+      game.selectMode('us');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const mapContainer = document.getElementById('map-container');
+      const svg = mapContainer?.querySelector('svg') as SVGSVGElement;
+
+      // Ensure we have a valid SVG and the game has started
+      expect(svg).toBeDefined();
+      expect((game as any).gameStarted).toBe(true);
+
+      // Simulate the first question being US-MA (Massachusetts)
+      const questions = (game as any).questions;
+      if (questions.length === 0) return; // Skip if no questions generated
+
+      // Force Massachusetts to be the first question for reproducibility
+      const maQuestion = { stateId: 'US-MA', stateName: 'Massachusetts', region: 'us' };
+      (game as any).questions = [maQuestion, ...questions.slice(1)];
+      (game as any).currentQuestion = 0;
+
+      // Display the question which should highlight US-MA with marching ants
+      (game as any).displayQuestion();
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Find the Massachusetts element (could be path or group)
+      const maElement = svg.querySelector('#US-MA') as SVGPathElement | SVGGElement;
+
+      if (maElement) {
+        // Verify marching ants are applied initially
+        const checkMarchingAnts = (element: Element) => {
+          const htmlEl = element as HTMLElement;
+          return htmlEl.style.animation.includes('marchingAnts') ||
+                 htmlEl.style.strokeDasharray === '3,3' ||
+                 htmlEl.style.stroke?.includes('multiColorPattern');
+        };
+
+        let hasAnimationBefore = false;
+        if (maElement.tagName === 'g') {
+          // For group elements, check child paths
+          const pathElements = maElement.querySelectorAll('path');
+          hasAnimationBefore = Array.from(pathElements).some(checkMarchingAnts);
+        } else {
+          hasAnimationBefore = checkMarchingAnts(maElement);
+        }
+
+        expect(hasAnimationBefore).toBe(true); // Should have marching ants initially
+
+        // Simulate giving the correct answer by calling submitTextAnswer with correct answer
+        const textInput = document.getElementById('text-answer-input') as HTMLInputElement;
+        if (textInput) {
+          textInput.value = 'Massachusetts';
+
+          // Mock the voice method to avoid delays in test
+          const originalVoiceMethod = (game as any).voice.playCorrectPhrase;
+          (game as any).voice.playCorrectPhrase = vi.fn();
+
+          // Submit the correct answer
+          (game as any).submitTextAnswer();
+
+          // Check immediately after submission - marching ants should be cleared
+          let hasAnimationAfter = false;
+          if (maElement.tagName === 'g') {
+            const pathElements = maElement.querySelectorAll('path');
+            hasAnimationAfter = Array.from(pathElements).some(checkMarchingAnts);
+          } else {
+            hasAnimationAfter = checkMarchingAnts(maElement);
+          }
+
+          expect(hasAnimationAfter).toBe(false); // Bug: marching ants should be cleared immediately but aren't
+
+          // Restore the voice method
+          (game as any).voice.playCorrectPhrase = originalVoiceMethod;
+        }
+      }
+    });
+
+    it('should immediately clear marching ants animation when wrong answer is given in hard mode', async () => {
+      // Set up hard mode US game
+      game.selectDifficulty('hard');
+      game.selectMode('us');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const mapContainer = document.getElementById('map-container');
+      const svg = mapContainer?.querySelector('svg') as SVGSVGElement;
+
+      expect(svg).toBeDefined();
+      expect((game as any).gameStarted).toBe(true);
+
+      // Force New York to be the first question
+      const nyQuestion = { stateId: 'US-NY', stateName: 'New York', region: 'us' };
+      const questions = (game as any).questions;
+      (game as any).questions = [nyQuestion, ...questions.slice(1)];
+      (game as any).currentQuestion = 0;
+
+      // Display the question
+      (game as any).displayQuestion();
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const nyElement = svg.querySelector('#US-NY') as SVGPathElement | SVGGElement;
+
+      if (nyElement) {
+        const checkMarchingAnts = (element: Element) => {
+          const htmlEl = element as HTMLElement;
+          return htmlEl.style.animation.includes('marchingAnts') ||
+                 htmlEl.style.strokeDasharray === '3,3' ||
+                 htmlEl.style.stroke?.includes('multiColorPattern');
+        };
+
+        // Verify marching ants are applied initially
+        let hasAnimationBefore = false;
+        if (nyElement.tagName === 'g') {
+          const pathElements = nyElement.querySelectorAll('path');
+          hasAnimationBefore = Array.from(pathElements).some(checkMarchingAnts);
+        } else {
+          hasAnimationBefore = checkMarchingAnts(nyElement);
+        }
+
+        expect(hasAnimationBefore).toBe(true);
+
+        // Give wrong answer
+        const textInput = document.getElementById('text-answer-input') as HTMLInputElement;
+        if (textInput) {
+          textInput.value = 'California'; // Wrong answer
+
+          // Mock voice methods
+          const originalVoiceMethod = (game as any).voice.playIncorrectPhrase;
+          (game as any).voice.playIncorrectPhrase = vi.fn();
+
+          (game as any).submitTextAnswer();
+
+          // Check that marching ants are cleared after wrong answer
+          let hasAnimationAfter = false;
+          if (nyElement.tagName === 'g') {
+            const pathElements = nyElement.querySelectorAll('path');
+            hasAnimationAfter = Array.from(pathElements).some(checkMarchingAnts);
+          } else {
+            hasAnimationAfter = checkMarchingAnts(nyElement);
+          }
+
+          expect(hasAnimationAfter).toBe(false);
+
+          // Restore voice method
+          (game as any).voice.playIncorrectPhrase = originalVoiceMethod;
+        }
+      }
+    });
+
+    it('should immediately clear marching ants animation when correct answer is given in easy mode', async () => {
+      // Set up easy mode US game
+      game.selectDifficulty('easy');
+      game.selectMode('us');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const mapContainer = document.getElementById('map-container');
+      const svg = mapContainer?.querySelector('svg') as SVGSVGElement;
+
+      expect(svg).toBeDefined();
+      expect((game as any).gameStarted).toBe(true);
+
+      // Force Florida to be the first question
+      const flQuestion = { stateId: 'US-FL', stateName: 'Florida', region: 'us' };
+      const questions = (game as any).questions;
+      (game as any).questions = [flQuestion, ...questions.slice(1)];
+      (game as any).currentQuestion = 0;
+
+      // Display the question
+      (game as any).displayQuestion();
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const flElement = svg.querySelector('#US-FL') as SVGPathElement | SVGGElement;
+
+      if (flElement) {
+        const checkMarchingAnts = (element: Element) => {
+          const htmlEl = element as HTMLElement;
+          return htmlEl.style.animation.includes('marchingAnts') ||
+                 htmlEl.style.strokeDasharray === '3,3' ||
+                 htmlEl.style.stroke?.includes('multiColorPattern');
+        };
+
+        // Verify marching ants are applied initially
+        let hasAnimationBefore = false;
+        if (flElement.tagName === 'g') {
+          const pathElements = flElement.querySelectorAll('path');
+          hasAnimationBefore = Array.from(pathElements).some(checkMarchingAnts);
+        } else {
+          hasAnimationBefore = checkMarchingAnts(flElement);
+        }
+
+        expect(hasAnimationBefore).toBe(true);
+
+        // Mock voice methods
+        const originalVoiceMethod = (game as any).voice.playCorrectPhrase;
+        (game as any).voice.playCorrectPhrase = vi.fn();
+
+        // Click the correct answer button in easy mode
+        (game as any).selectAnswer('Florida', 'Florida');
+
+        // Check that marching ants are cleared immediately after correct answer
+        let hasAnimationAfter = false;
+        if (flElement.tagName === 'g') {
+          const pathElements = flElement.querySelectorAll('path');
+          hasAnimationAfter = Array.from(pathElements).some(checkMarchingAnts);
+        } else {
+          hasAnimationAfter = checkMarchingAnts(flElement);
+        }
+
+        expect(hasAnimationAfter).toBe(false);
+
+        // Restore voice method
+        (game as any).voice.playCorrectPhrase = originalVoiceMethod;
+      }
+    });
+  });
 });

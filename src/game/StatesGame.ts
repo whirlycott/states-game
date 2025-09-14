@@ -583,6 +583,19 @@ export class StatesGame {
         }
     }
 
+    private clearMarchingAnts(): void {
+        if (!this.svgElement) return;
+
+        // Remove marching ants animation from all elements
+        this.svgElement.querySelectorAll('.highlighted, .current-state').forEach(el => {
+            (el as HTMLElement).style.strokeWidth = '';
+            (el as HTMLElement).style.stroke = '';
+            (el as HTMLElement).style.strokeDasharray = '';
+            (el as HTMLElement).style.animation = '';
+            el.classList.remove('highlighted', 'current-state');
+        });
+    }
+
     private handleStateClick(_event: MouseEvent): void {
         // Disable map clicking in all modes - users should use buttons (easy) or text input (hard)
         return;
@@ -591,6 +604,7 @@ export class StatesGame {
     private handleCorrectAnswer(stateId: string): void {
         this.correctAnswers++;
         this.answeredStates.set(stateId, 'correct');
+        this.clearMarchingAnts(); // Clear marching ants immediately
         this.sounds.playCorrect();
         this.voice.playCorrectPhrase(this.questions[this.currentQuestion].stateName);
         this.markStateAsAnswered(stateId, true);
@@ -605,6 +619,7 @@ export class StatesGame {
     private handleWrongAnswer(stateId: string, userGuess?: string): void {
         this.wrongAnswers++;
         this.answeredStates.set(stateId, 'incorrect');
+        this.clearMarchingAnts(); // Clear marching ants immediately
         this.sounds.playIncorrect();
         this.voice.playIncorrectPhrase(this.questions[this.currentQuestion].stateName, userGuess);
         this.markStateAsAnswered(stateId, false);
