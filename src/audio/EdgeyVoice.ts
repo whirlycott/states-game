@@ -61,14 +61,41 @@ export class EdgeyVoice {
         const setVoice = (): void => {
             const voices = this.synth.getVoices();
             
-            // Prefer English voices with deeper characteristics
-            const preferredVoices = [
-                'Microsoft David - English (United States)',
-                'Alex', // macOS
-                'Google UK English Male',
-                'en-US-Male',
-                'en-GB-Male'
-            ];
+            // Browser-specific voice preferences for better quality
+            const userAgent = navigator.userAgent.toLowerCase();
+            let preferredVoices: string[] = [];
+            
+            if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
+                // Safari-specific voices (macOS)
+                preferredVoices = [
+                    'Alex',
+                    'Daniel',
+                    'Samantha',
+                    'Tom',
+                    'Microsoft David - English (United States)'
+                ];
+            } else if (userAgent.includes('firefox')) {
+                // Firefox-specific voices (prioritize native macOS voices)
+                preferredVoices = [
+                    'Alex',
+                    'Daniel',
+                    'Tom',
+                    'Samantha',
+                    'Fred',
+                    'Ralph',
+                    'Microsoft David - English (United States)',
+                    'Google UK English Male'
+                ];
+            } else {
+                // Chrome and other browsers (keep existing behavior)
+                preferredVoices = [
+                    'Microsoft David - English (United States)',
+                    'Alex', // macOS
+                    'Google UK English Male',
+                    'en-US-Male',
+                    'en-GB-Male'
+                ];
+            }
             
             for (const preferred of preferredVoices) {
                 const found = voices.find(v => v.name.includes(preferred) || v.name === preferred);
