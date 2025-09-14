@@ -277,7 +277,53 @@ describe('EdgeyVoice', () => {
       
       const constructorCall = (global.SpeechSynthesisUtterance as any).mock.calls[0][0];
       expect(constructorCall).toContain('Montana');
-      expect(constructorCall).not.toContain('{state}');
+      expect(constructorCall).not.toContain('{correctState}');
+    });
+
+    it('should speak incorrect phrase with both user guess and correct state', () => {
+      // Force selection of phrase with both placeholders (index 2: "Wrong answer! It's {correctState}, not {userState}...")
+      const originalRandom = Math.random;
+      Math.random = vi.fn(() => 2 / 15); // Select the phrase at index 2
+      
+      edgyVoice.playIncorrectPhrase('Montana', 'Wyoming');
+      
+      const constructorCall = (global.SpeechSynthesisUtterance as any).mock.calls[0][0];
+      expect(constructorCall).toContain('Montana'); // Should contain correct state
+      expect(constructorCall).toContain('Wyoming'); // Should contain user guess
+      expect(constructorCall).not.toContain('{correctState}');
+      expect(constructorCall).not.toContain('{userState}');
+      
+      Math.random = originalRandom;
+    });
+
+    it('should handle user guess only in phrases', () => {
+      // Mock to return a phrase that uses {userState} but not {correctState}
+      const originalRandom = Math.random;
+      Math.random = vi.fn(() => 0); // Select first phrase
+      
+      edgyVoice.playIncorrectPhrase(undefined, 'Wyoming');
+      
+      const constructorCall = (global.SpeechSynthesisUtterance as any).mock.calls[0][0];
+      expect(constructorCall).toContain('Wyoming'); // Should contain user guess
+      expect(constructorCall).not.toContain('{userState}'); // Should not contain placeholder
+      
+      Math.random = originalRandom;
+    });
+
+    it('should handle placeholders independently for userState and correctState', () => {
+      // Force selection of phrase with both placeholders (index 2: "Wrong answer! It's {correctState}, not {userState}...")
+      const originalRandom = Math.random;
+      Math.random = vi.fn(() => 2 / 15); // Select the phrase at index 2
+      
+      edgyVoice.playIncorrectPhrase('Texas', 'California');
+      
+      const constructorCall = (global.SpeechSynthesisUtterance as any).mock.calls[0][0];
+      expect(constructorCall).toContain('Texas'); // Correct state
+      expect(constructorCall).toContain('California'); // User guess
+      expect(constructorCall).not.toContain('{correctState}');
+      expect(constructorCall).not.toContain('{userState}');
+      
+      Math.random = originalRandom;
     });
 
     it('should track incorrect phrases separately from correct phrases', () => {
@@ -293,9 +339,9 @@ describe('EdgeyVoice', () => {
 
       // Speak multiple correct and incorrect phrases
       edgyVoice.playCorrectPhrase('TestState');
-      edgyVoice.playIncorrectPhrase('CorrectState');
+      edgyVoice.playIncorrectPhrase('CorrectState', 'UserGuess');
       edgyVoice.playCorrectPhrase('TestState2');
-      edgyVoice.playIncorrectPhrase('CorrectState2');
+      edgyVoice.playIncorrectPhrase('CorrectState2', 'UserGuess2');
 
       expect(spokenPhrases).toHaveLength(4);
       
@@ -311,7 +357,7 @@ describe('EdgeyVoice', () => {
       edgyVoice.playCorrectPhrase('TestState');
       
       // Speak same incorrect phrase (should also work, different pool)
-      edgyVoice.playIncorrectPhrase('CorrectState');
+      edgyVoice.playIncorrectPhrase('CorrectState', 'UserGuess');
       
       expect(mockSpeechSynthesis.speak).toHaveBeenCalledTimes(2);
       
@@ -564,8 +610,8 @@ describe('EdgeyVoice', () => {
       edgyVoice.announceQuestion('Texas', 'hard', 'us-hard');
       expect(mockSpeechSynthesis.speak).toHaveBeenCalledTimes(1);
       
-      // Play incorrect answer with correct state
-      edgyVoice.playIncorrectPhrase('Texas');
+      // Play incorrect answer with both correct state and user guess
+      edgyVoice.playIncorrectPhrase('Texas', 'California');
       expect(mockSpeechSynthesis.speak).toHaveBeenCalledTimes(2);
       
       expect(mockSpeechSynthesis.cancel).toHaveBeenCalledTimes(2);
@@ -589,6 +635,84 @@ describe('EdgeyVoice', () => {
       
       // None of these should result in speech when disabled
       expect(mockSpeechSynthesis.speak).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Voice Feedback Bug Fix Validation', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('should properly substitute {userState} placeholder with user guess', () => {
+      // Force selection of phrase with {userState} placeholder (index 0: "Ouch! That's not {userState}...")
+      const originalRandom = Math.random;
+      Math.random = vi.fn(() => 0); // Select the first phrase
+      
+      edgyVoice.playIncorrectPhrase('California', 'Texas');
+      
+      const constructorCall = (global.SpeechSynthesisUtterance as any).mock.calls[0][0];
+      expect(constructorCall).toContain('Texas'); // User's guess
+      expect(constructorCall).not.toContain('{userState}');
+      
+      Math.random = originalRandom;
+    });
+
+    it('should properly substitute {correctState} placeholder with correct answer', () => {
+      // Force selection of phrase with {correctState} placeholder (index 3: "Swing and a miss! The answer is {correctState}...")
+      const originalRandom = Math.random;
+      Math.random = vi.fn(() => 3 / 15); // Select phrase at index 3
+      
+      edgyVoice.playIncorrectPhrase('California', 'Texas');
+      
+      const constructorCall = (global.SpeechSynthesisUtterance as any).mock.calls[0][0];
+      expect(constructorCall).toContain('California'); // Correct answer
+      expect(constructorCall).not.toContain('{correctState}');
+      
+      Math.random = originalRandom;
+    });
+
+    it('should handle phrases with only {correctState} placeholder', () => {
+      edgyVoice.playIncorrectPhrase('Montana');
+      
+      const constructorCall = (global.SpeechSynthesisUtterance as any).mock.calls[0][0];
+      expect(constructorCall).toContain('Montana');
+      expect(constructorCall).not.toContain('{correctState}');
+    });
+
+    it('should handle phrases with both {userState} and {correctState} placeholders', () => {
+      // Mock random to ensure we get a phrase with both placeholders
+      const originalRandom = Math.random;
+      Math.random = () => 0.1; // Force selection of one of the first few phrases that have both placeholders
+      
+      edgyVoice.playIncorrectPhrase('California', 'Nevada');
+      
+      const constructorCall = (global.SpeechSynthesisUtterance as any).mock.calls[0][0];
+      expect(constructorCall).toContain('California'); // correct answer should always be present
+      expect(constructorCall).not.toContain('{correctState}');
+      
+      // Only expect userState if the phrase actually contains it
+      if (constructorCall.includes('Nevada')) {
+        expect(constructorCall).not.toContain('{userState}');
+      }
+      
+      Math.random = originalRandom;
+    });
+
+    it('should not break when neither placeholder values are provided', () => {
+      edgyVoice.playIncorrectPhrase();
+      
+      expect(mockSpeechSynthesis.speak).toHaveBeenCalled();
+      const constructorCall = (global.SpeechSynthesisUtterance as any).mock.calls[0][0];
+      expect(typeof constructorCall).toBe('string');
+    });
+
+    it('should preserve original phrase templates when placeholders are not provided', () => {
+      edgyVoice.playIncorrectPhrase();
+      
+      const constructorCall = (global.SpeechSynthesisUtterance as any).mock.calls[0][0];
+      // Should still speak a phrase, even if placeholders remain unreplaced
+      expect(constructorCall.length).toBeGreaterThan(0);
+      expect(mockSpeechSynthesis.speak).toHaveBeenCalled();
     });
   });
 });

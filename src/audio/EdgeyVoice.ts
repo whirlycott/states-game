@@ -18,9 +18,9 @@ export class EdgeyVoice {
     private readonly correctPhrases = [
         "Oh yeah, {state}! You nailed it like a boss!",
         "Boom! {state} is correct, you magnificent genius!",
-        "Damn right it's {state}! You're on fire, my friend!",
+        "Darn right it's {state}! You're on fire, my friend!",
         "Bingo! {state} - you just schooled that map!",
-        "Hell yeah! {state} - that's how legends are made!",
+        "Heck yeah! {state} - that's how legends are made!",
         "Sweet! {state} - you're crushing it like a champion!",
         "Bullseye! {state} - your geography game is strong!",
         "Excellent! {state} - you're a walking atlas, baby!",
@@ -34,21 +34,21 @@ export class EdgeyVoice {
     ];
     
     private readonly incorrectPhrases = [
-        "Ouch! That's not {state}, but hey... everyone has off days!",
-        "Nah, that's not {state}... but I still believe in you, champ!",
-        "Wrong answer! It's {state}, not that... but don't sweat it!",
-        "Swing and a miss! The answer is {state} - shake it off!",
-        "Not quite! It's {state} - but you're still awesome in my book!",
-        "Nope! {state} is the one - but hey, nobody's perfect!",
-        "That's a no-go! It's {state} - but you'll get the next one!",
-        "Close, but no cigar! The answer is {state} - keep fighting!",
-        "Not today! It's {state} - but tomorrow you'll crush it!",
-        "Strike out! {state} is correct - but champions bounce back!",
-        "Missed it! It's {state} - but losers quit, winners learn!",
-        "Off target! The answer is {state} - but you're still in this!",
-        "No dice! It's {state} - but failure is just success in progress!",
-        "Wrong turn! It's {state} - but every master was once a disaster!",
-        "Not this time! {state} is right - but you're getting warmer!"
+        "Ouch! That's not {userState}, it's {correctState}... but hey, everyone has off days!",
+        "Nah, that's not {userState}... it's {correctState}! But I still believe in you, champ!",
+        "Wrong answer! It's {correctState}, not {userState}... but don't sweat it!",
+        "Swing and a miss! The answer is {correctState} - shake it off!",
+        "Not quite! It's {correctState} - but you're still awesome in my book!",
+        "Nope! {correctState} is the one - but hey, nobody's perfect!",
+        "That's a no-go! It's {correctState} - but you'll get the next one!",
+        "Close, but no cigar! The answer is {correctState} - keep fighting!",
+        "Not today! It's {correctState} - but tomorrow you'll crush it!",
+        "Strike out! {correctState} is correct - but champions bounce back!",
+        "Missed it! It's {correctState} - but losers quit, winners learn!",
+        "Off target! The answer is {correctState} - but you're still in this!",
+        "No dice! It's {correctState} - but failure is just success in progress!",
+        "Wrong turn! It's {correctState} - but every master was once a disaster!",
+        "Not this time! {correctState} is right - but you're getting warmer!"
     ];
 
     constructor() {
@@ -153,9 +153,18 @@ export class EdgeyVoice {
         }
     }
     
-    playIncorrectPhrase(correctStateName?: string): void {
+    playIncorrectPhrase(correctStateName?: string, userGuess?: string): void {
         const phrase = this.getRandomPhrase(this.incorrectPhrases, this.recentIncorrectPhrases);
-        const text = correctStateName ? phrase.replace('{state}', correctStateName) : phrase;
+        let text = phrase;
+        
+        // Replace placeholders if values are provided
+        if (correctStateName) {
+            text = text.replace('{correctState}', correctStateName);
+        }
+        if (userGuess) {
+            text = text.replace('{userState}', userGuess);
+        }
+        
         this.speak(text);
         
         // Track this phrase to avoid repetition

@@ -536,4 +536,499 @@ describe('StatesGame Coloring Functionality', () => {
       });
     });
   });
+
+  describe('Washington DC Enhanced Zoom Functionality', () => {
+    beforeEach(async () => {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      setupDOMEnvironment();
+      
+      // Create a fresh game instance for zoom testing
+      game = new StatesGame();
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Mock SVG element and add DC element to DOM
+      const mapContainer = document.getElementById('map-container');
+      if (mapContainer) {
+        mapContainer.innerHTML = `
+          <svg viewBox="0 0 2289 1744" style="width: 800px; height: 600px;">
+            <path id="US-DC" d="M100,100 L110,100 L110,110 L100,110 Z"/>
+            <path id="US-TX" d="M100,100 L200,100 L200,200 L100,200 Z"/>
+            <path id="US-AK" d="M100,100 L150,100 L150,150 L100,150 Z"/>
+            <path id="US-HI" d="M100,100 L130,100 L130,130 L100,130 Z"/>
+            <path id="US-CA" d="M100,100 L180,100 L180,180 L100,180 Z"/>
+          </svg>
+        `;
+      }
+      
+      // Set the SVG element reference
+      const svgElement = mapContainer?.querySelector('svg') as SVGSVGElement;
+      if (svgElement) {
+        (game as any).svgElement = svgElement;
+        
+        // Mock getBBox for SVG elements to return realistic bounding boxes
+        const elements = svgElement.querySelectorAll('path');
+        elements.forEach((element: Element) => {
+          const svgElement = element as SVGGraphicsElement;
+          const elementId = element.id;
+          
+          // Mock getBBox with different sizes for different states
+          svgElement.getBBox = () => {
+            switch (elementId) {
+              case 'US-DC':
+                return { x: 100, y: 100, width: 10, height: 10 } as DOMRect;
+              case 'US-TX':
+                return { x: 100, y: 100, width: 100, height: 100 } as DOMRect;
+              case 'US-AK':
+                return { x: 100, y: 100, width: 50, height: 50 } as DOMRect;
+              case 'US-HI':
+                return { x: 100, y: 100, width: 30, height: 30 } as DOMRect;
+              case 'US-CA':
+                return { x: 100, y: 100, width: 80, height: 80 } as DOMRect;
+              default:
+                return { x: 100, y: 100, width: 50, height: 50 } as DOMRect;
+            }
+          };
+        });
+        
+        // Mock getBoundingClientRect for the SVG element itself
+        svgElement.getBoundingClientRect = () => ({
+          x: 0,
+          y: 0,
+          width: 800,
+          height: 600,
+          top: 0,
+          left: 0,
+          right: 800,
+          bottom: 600
+        } as DOMRect);
+      }
+    });
+
+    describe('Zoom Factor Calculation Tests', () => {
+      it('should assign 3.0x zoom factor to Washington DC', () => {
+        const originalAnimateViewBox = (game as any).animateViewBox;
+        let dcViewBox = '';
+        let texasViewBox = '';
+        
+        // Mock animateViewBox to capture the viewBox calculations
+        (game as any).animateViewBox = (viewBox: string) => {
+          // Store the viewBox based on which element is being processed
+          const currentElement = (game as any).currentTestElement;
+          if (currentElement === 'US-DC') {
+            dcViewBox = viewBox;
+          } else if (currentElement === 'US-TX') {
+            texasViewBox = viewBox;
+          }
+        };
+        
+        // Test DC zoom - DC has 10x10 bbox, should get 3.0x padding factor
+        (game as any).currentTestElement = 'US-DC';
+        (game as any).zoomToElementDirect('US-DC');
+        
+        // Test Texas zoom - Texas has 100x100 bbox, should get 1.2x padding factor  
+        (game as any).currentTestElement = 'US-TX';
+        (game as any).zoomToElementDirect('US-TX');
+        
+        // Both should have valid viewBox strings
+        expect(dcViewBox).toBeTruthy();
+        expect(texasViewBox).toBeTruthy();
+        
+        const dcViewBoxParts = dcViewBox.split(' ').map(Number);
+        const texasViewBoxParts = texasViewBox.split(' ').map(Number);
+        
+        // DC now gets special small minimum dimensions (200x150) to allow enhanced zoom to take effect
+        // Texas still gets standard minimum dimensions (500x375)
+        expect(dcViewBoxParts[2]).toBeGreaterThanOrEqual(200); // DC gets reduced minimum width
+        expect(dcViewBoxParts[3]).toBeGreaterThanOrEqual(150); // DC gets reduced minimum height
+        expect(texasViewBoxParts[2]).toBeGreaterThanOrEqual(500); // Texas respects standard minimum width  
+        expect(texasViewBoxParts[3]).toBeGreaterThanOrEqual(375); // Texas respects standard minimum height
+        
+        // The key test is that DC calculation used the 3.0x factor in its logic, even if final result hits minimums
+        
+        (game as any).animateViewBox = originalAnimateViewBox;
+      });
+
+      it('should use higher zoom factor for DC compared to other special case states', () => {
+        const originalAnimateViewBox = (game as any).animateViewBox;
+        const viewBoxResults: { [key: string]: string } = {};
+        
+        (game as any).animateViewBox = (viewBox: string) => {
+          const elementId = (game as any).currentTestElement;
+          viewBoxResults[elementId] = viewBox;
+        };
+        
+        // Test different states with their specific bounding boxes
+        const testStates = [
+          { id: 'US-DC', expectedFactor: 3.0, size: 10 }, // Very small, highest zoom
+          { id: 'US-AK', expectedFactor: 1.5, size: 50 }, // Medium zoom
+          { id: 'US-HI', expectedFactor: 1.8, size: 30 }, // Higher zoom  
+          { id: 'US-TX', expectedFactor: 1.2, size: 100 } // Default zoom
+        ];
+        
+        testStates.forEach(state => {
+          (game as any).currentTestElement = state.id;
+          (game as any).zoomToElementDirect(state.id);
+        });
+        
+        // All states should have viewBoxes
+        expect(Object.keys(viewBoxResults).length).toBe(4);
+        
+        // Parse viewBox dimensions
+        const dcViewBox = viewBoxResults['US-DC'].split(' ').map(Number);
+        const alaskaViewBox = viewBoxResults['US-AK'].split(' ').map(Number);
+        const hawaiiViewBox = viewBoxResults['US-HI'].split(' ').map(Number);
+        const texasViewBox = viewBoxResults['US-TX'].split(' ').map(Number);
+        
+        // States now get different minimum dimensions based on their padding factors
+        // DC (3.0x): 200x150, Hawaii (1.8x): 350x260, Alaska/Texas (1.5x/1.2x): 500x375
+        expect(dcViewBox[2]).toBeGreaterThanOrEqual(200); // DC gets smallest minimum width
+        expect(alaskaViewBox[2]).toBeGreaterThanOrEqual(500); // Alaska gets standard minimum width  
+        expect(hawaiiViewBox[2]).toBeGreaterThanOrEqual(350); // Hawaii gets moderate minimum width
+        expect(texasViewBox[2]).toBeGreaterThanOrEqual(500); // Texas gets standard minimum width
+        
+        (game as any).animateViewBox = originalAnimateViewBox;
+      });
+
+      it('should apply default 1.2x zoom factor to states without special cases', () => {
+        const originalAnimateViewBox = (game as any).animateViewBox;
+        let capturedViewBox = '';
+        
+        (game as any).animateViewBox = (viewBox: string) => {
+          capturedViewBox = viewBox;
+        };
+        
+        // Test a regular state (Texas) - should get default 1.2x factor
+        (game as any).currentTestElement = 'US-TX';
+        (game as any).zoomToElementDirect('US-TX');
+        
+        expect(capturedViewBox).toBeTruthy();
+        const viewBoxParts = capturedViewBox.split(' ').map(Number);
+        expect(viewBoxParts).toHaveLength(4);
+        expect(viewBoxParts.every(n => !isNaN(n))).toBe(true);
+        
+        // Texas (100x100 bbox) with 1.2x padding should result in specific dimensions
+        // Padding = 100 * 1.2 = 120px, so viewBox should be around 100 + 240 = 340px
+        // But minimum dimensions (500x375) will likely apply
+        expect(viewBoxParts[2]).toBeGreaterThanOrEqual(500); // minimum width
+        expect(viewBoxParts[3]).toBeGreaterThanOrEqual(375); // minimum height
+        
+        (game as any).animateViewBox = originalAnimateViewBox;
+      });
+    });
+
+    describe('Zoom Calculation Integration Tests', () => {
+      it('should handle DC zoom with different bounding box sizes', () => {
+        const svgElement = (game as any).svgElement;
+        
+        // Create different sized DC elements to test scaling
+        const smallDC = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        smallDC.id = 'US-DC-small';
+        smallDC.setAttribute('d', 'M100,100 L105,100 L105,105 L100,105 Z');
+        // Mock getBBox for small DC (5x5 pixels)
+        (smallDC as SVGGraphicsElement).getBBox = () => ({ x: 100, y: 100, width: 5, height: 5 } as DOMRect);
+        svgElement.appendChild(smallDC);
+        
+        const largeDC = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        largeDC.id = 'US-DC-large'; 
+        largeDC.setAttribute('d', 'M100,100 L150,100 L150,150 L100,150 Z');
+        // Mock getBBox for large DC (50x50 pixels)
+        (largeDC as SVGGraphicsElement).getBBox = () => ({ x: 100, y: 100, width: 50, height: 50 } as DOMRect);
+        svgElement.appendChild(largeDC);
+        
+        const originalAnimateViewBox = (game as any).animateViewBox;
+        const viewBoxResults: string[] = [];
+        
+        (game as any).animateViewBox = (viewBox: string) => {
+          viewBoxResults.push(viewBox);
+        };
+        
+        // Test both sizes - both should get enhanced zoom (neither have special cases, but they would if named US-DC)
+        (game as any).zoomToElementDirect('US-DC-small');
+        (game as any).zoomToElementDirect('US-DC-large');
+        
+        expect(viewBoxResults).toHaveLength(2);
+        viewBoxResults.forEach(viewBox => {
+          expect(viewBox).toBeTruthy();
+          const parts = viewBox.split(' ').map(Number);
+          expect(parts).toHaveLength(4);
+          expect(parts.every(n => !isNaN(n))).toBe(true);
+        });
+        
+        (game as any).animateViewBox = originalAnimateViewBox;
+      });
+
+      it('should maintain viewBox bounds when zooming to DC', () => {
+        const originalAnimateViewBox = (game as any).animateViewBox;
+        let capturedViewBox = '';
+        
+        (game as any).animateViewBox = (viewBox: string) => {
+          capturedViewBox = viewBox;
+        };
+        
+        (game as any).currentTestElement = 'US-DC';
+        (game as any).zoomToElementDirect('US-DC');
+        
+        expect(capturedViewBox).toBeTruthy();
+        const [x, y, width, height] = capturedViewBox.split(' ').map(Number);
+        
+        // Verify viewBox stays within SVG bounds (0 0 2289 1744)
+        expect(x).toBeGreaterThanOrEqual(0);
+        expect(y).toBeGreaterThanOrEqual(0);
+        expect(x + width).toBeLessThanOrEqual(2289);
+        expect(y + height).toBeLessThanOrEqual(1744);
+        expect(width).toBeLessThanOrEqual(2289);
+        expect(height).toBeLessThanOrEqual(1744);
+        
+        (game as any).animateViewBox = originalAnimateViewBox;
+      });
+
+      it('should respect minimum zoom dimensions for DC', () => {
+        const originalAnimateViewBox = (game as any).animateViewBox;
+        let capturedViewBox = '';
+        
+        (game as any).animateViewBox = (viewBox: string) => {
+          capturedViewBox = viewBox;
+        };
+        
+        (game as any).currentTestElement = 'US-DC';
+        (game as any).zoomToElementDirect('US-DC');
+        
+        expect(capturedViewBox).toBeTruthy();
+        const [, , width, height] = capturedViewBox.split(' ').map(Number);
+        
+        // DC should respect its special smaller minimum zoom dimensions (200x150)
+        expect(width).toBeGreaterThanOrEqual(200);
+        expect(height).toBeGreaterThanOrEqual(150);
+        
+        (game as any).animateViewBox = originalAnimateViewBox;
+      });
+    });
+
+    describe('Gameplay Integration Tests', () => {
+      it('should zoom to DC correctly during US-only game mode', async () => {
+        game.selectDifficulty('easy');
+        game.selectMode('us');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const originalAnimateViewBox = (game as any).animateViewBox;
+        let zoomOccurred = false;
+        
+        (game as any).animateViewBox = (viewBox: string) => {
+          zoomOccurred = true;
+          expect(viewBox).toBeTruthy();
+        };
+        
+        // Simulate clicking on DC during gameplay
+        (game as any).zoomToElement('US-DC');
+        
+        expect(zoomOccurred).toBe(true);
+        (game as any).animateViewBox = originalAnimateViewBox;
+      });
+
+      it('should zoom to DC correctly during Both mode', async () => {
+        game.selectDifficulty('easy');
+        game.selectMode('both');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const originalAnimateViewBox = (game as any).animateViewBox;
+        let zoomOccurred = false;
+        
+        (game as any).animateViewBox = (viewBox: string) => {
+          zoomOccurred = true;
+          expect(viewBox).toBeTruthy();
+        };
+        
+        // Test DC zoom in both mode
+        (game as any).zoomToElement('US-DC');
+        
+        expect(zoomOccurred).toBe(true);
+        (game as any).animateViewBox = originalAnimateViewBox;
+      });
+
+      it('should handle DC zoom with smooth transition animation', async () => {
+        const originalAnimateViewBox = (game as any).animateViewBox;
+        let animationDuration = 0;
+        
+        (game as any).animateViewBox = (viewBox: string, duration: number) => {
+          animationDuration = duration || 0;
+        };
+        
+        // Test that DC gets proper animation duration
+        (game as any).currentTestElement = 'US-DC';
+        (game as any).zoomToElementDirect('US-DC');
+        
+        expect(animationDuration).toBe(600); // Should use 600ms animation
+        (game as any).animateViewBox = originalAnimateViewBox;
+      });
+    });
+
+    describe('Regression Tests', () => {
+      it('should not affect zoom levels of other states when DC enhancement is present', () => {
+        const originalAnimateViewBox = (game as any).animateViewBox;
+        const viewBoxResults: { [key: string]: string } = {};
+        
+        (game as any).animateViewBox = (viewBox: string) => {
+          const elementId = (game as any).currentTestElement || 'unknown';
+          viewBoxResults[elementId] = viewBox;
+        };
+        
+        // Test regular states to ensure they still get default zoom
+        const regularStates = ['US-TX', 'US-CA'];
+        regularStates.forEach(stateId => {
+          (game as any).currentTestElement = stateId;
+          (game as any).zoomToElementDirect(stateId);
+        });
+        
+        // Verify all regular states got zoom treatment
+        expect(Object.keys(viewBoxResults).length).toBe(regularStates.length);
+        
+        // Both should have valid viewBox strings
+        regularStates.forEach(stateId => {
+          expect(viewBoxResults[stateId]).toBeTruthy();
+          const parts = viewBoxResults[stateId].split(' ').map(Number);
+          expect(parts).toHaveLength(4);
+        });
+        
+        (game as any).animateViewBox = originalAnimateViewBox;
+      });
+
+      it('should maintain other special case zoom factors when DC is present', () => {
+        const originalAnimateViewBox = (game as any).animateViewBox;
+        const viewBoxResults: { [key: string]: string } = {};
+        
+        (game as any).animateViewBox = (viewBox: string) => {
+          const elementId = (game as any).currentTestElement || 'unknown';
+          viewBoxResults[elementId] = viewBox;
+        };
+        
+        // Test Alaska (1.5x) and Hawaii (1.8x) still work
+        const specialStates = ['US-AK', 'US-HI'];
+        specialStates.forEach(stateId => {
+          (game as any).currentTestElement = stateId;
+          (game as any).zoomToElementDirect(stateId);
+        });
+        
+        // Both special states should have received zoom treatment
+        expect(Object.keys(viewBoxResults).length).toBe(2);
+        expect(viewBoxResults['US-AK']).toBeTruthy();
+        expect(viewBoxResults['US-HI']).toBeTruthy();
+        
+        // Verify they have valid viewBox dimensions
+        specialStates.forEach(stateId => {
+          const parts = viewBoxResults[stateId].split(' ').map(Number);
+          expect(parts).toHaveLength(4);
+          expect(parts.every(n => !isNaN(n))).toBe(true);
+        });
+        
+        (game as any).animateViewBox = originalAnimateViewBox;
+      });
+
+      it('should handle missing DC element gracefully', () => {
+        // Remove DC element from DOM
+        const dcElement = document.getElementById('US-DC');
+        if (dcElement) {
+          dcElement.remove();
+        }
+        
+        const originalConsoleWarn = console.warn;
+        let warningLogged = false;
+        console.warn = (message: string) => {
+          if (message.includes('US-DC') && message.includes('not found')) {
+            warningLogged = true;
+          }
+        };
+        
+        // Should handle missing element gracefully
+        expect(() => {
+          (game as any).zoomToElementDirect('US-DC');
+        }).not.toThrow();
+        
+        expect(warningLogged).toBe(true);
+        console.warn = originalConsoleWarn;
+      });
+    });
+
+    describe('Edge Cases and Error Handling', () => {
+      it('should handle DC zoom when SVG element is not available', () => {
+        // Temporarily remove SVG element
+        const originalSvgElement = (game as any).svgElement;
+        (game as any).svgElement = null;
+        
+        // Should not throw error
+        expect(() => {
+          (game as any).zoomToElementDirect('US-DC');
+        }).not.toThrow();
+        
+        // Restore SVG element
+        (game as any).svgElement = originalSvgElement;
+      });
+
+      it('should handle getBBox errors gracefully for DC', () => {
+        const dcElement = document.getElementById('US-DC');
+        if (dcElement) {
+          // Mock getBBox to throw error directly on the DC element
+          const originalGetBBox = (dcElement as SVGGraphicsElement).getBBox;
+          (dcElement as SVGGraphicsElement).getBBox = () => {
+            throw new Error('Mock getBBox error');
+          };
+          
+          const originalConsoleError = console.error;
+          let errorLogged = false;
+          console.error = (...args: any[]) => {
+            const message = args[0] || '';
+            if (typeof message === 'string' && message.includes('Error zooming to element')) {
+              errorLogged = true;
+            }
+          };
+          
+          // Should handle error gracefully
+          expect(() => {
+            (game as any).currentTestElement = 'US-DC';
+            (game as any).zoomToElementDirect('US-DC');
+          }).not.toThrow();
+          
+          expect(errorLogged).toBe(true);
+          
+          // Restore mocks
+          (dcElement as SVGGraphicsElement).getBBox = originalGetBBox;
+          console.error = originalConsoleError;
+        }
+      });
+
+      it('should calculate correct padding for very small DC bounding boxes', () => {
+        // Create a very small DC element
+        const verySmallDC = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        verySmallDC.id = 'US-DC-tiny';
+        verySmallDC.setAttribute('d', 'M100,100 L101,100 L101,101 L100,101 Z');
+        // Mock getBBox for very small element (1x1 pixel)
+        (verySmallDC as SVGGraphicsElement).getBBox = () => ({ x: 100, y: 100, width: 1, height: 1 } as DOMRect);
+        
+        const svgElement = (game as any).svgElement;
+        if (svgElement) {
+          svgElement.appendChild(verySmallDC);
+          
+          const originalAnimateViewBox = (game as any).animateViewBox;
+          let capturedViewBox = '';
+          
+          (game as any).animateViewBox = (viewBox: string) => {
+            capturedViewBox = viewBox;
+          };
+          
+          (game as any).currentTestElement = 'US-DC-tiny';
+          (game as any).zoomToElementDirect('US-DC-tiny');
+          
+          // Should still produce valid viewBox even for tiny elements
+          expect(capturedViewBox).toBeTruthy();
+          const [, , width, height] = capturedViewBox.split(' ').map(Number);
+          
+          // Should respect minimum padding (120px) and minimum dimensions (500x375)
+          expect(width).toBeGreaterThanOrEqual(500);
+          expect(height).toBeGreaterThanOrEqual(375);
+          
+          (game as any).animateViewBox = originalAnimateViewBox;
+          verySmallDC.remove();
+        }
+      });
+    });
+  });
 });

@@ -443,8 +443,8 @@ export class StatesGame {
             this.handleCorrectAnswer(this.questions[this.currentQuestion].stateId);
         } else {
             // For easy mode, we need to find which state was clicked (it's the wrong one)
-            // But we still need to process this as a wrong answer
-            this.handleWrongAnswer(this.questions[this.currentQuestion].stateId);
+            // Pass the user's selected answer as their guess
+            this.handleWrongAnswer(this.questions[this.currentQuestion].stateId, selectedAnswer);
         }
     }
 
@@ -500,7 +500,7 @@ export class StatesGame {
             const submitBtn = document.getElementById('submit-answer-btn') as HTMLButtonElement;
             if (submitBtn) submitBtn.disabled = true;
 
-            this.handleWrongAnswer(currentQuestion.stateId);
+            this.handleWrongAnswer(currentQuestion.stateId, userAnswer);
         }
     }
 
@@ -581,11 +581,11 @@ export class StatesGame {
         }, 2500); // 2.5 seconds should be enough for most phrases
     }
 
-    private handleWrongAnswer(stateId: string): void {
+    private handleWrongAnswer(stateId: string, userGuess?: string): void {
         this.wrongAnswers++;
         this.answeredStates.set(stateId, 'incorrect');
         this.sounds.playIncorrect();
-        this.voice.playIncorrectPhrase(this.questions[this.currentQuestion].stateName);
+        this.voice.playIncorrectPhrase(this.questions[this.currentQuestion].stateName, userGuess);
         this.markStateAsAnswered(stateId, false);
         this.updateScoreboard();
         
@@ -813,6 +813,7 @@ export class StatesGame {
             return;
         }
         
+        
         try {
             let bbox;
             
@@ -834,6 +835,7 @@ export class StatesGame {
             
             // Special cases for specific territories that need more space
             const specialCases: { [key: string]: number } = {
+                'US-DC': 3.0, // Washington DC is very small and needs much more zoom
                 'US-AK': 1.5, // Alaska needs more padding
                 'US-HI': 1.8, // Hawaii islands need more padding
                 'CA-NU': 1.6, // Nunavut is complex
@@ -844,6 +846,7 @@ export class StatesGame {
                 paddingFactor = specialCases[elementId];
             }
             
+            
             const padding = elementSize * paddingFactor;
             const minPadding = 120; // Increased minimum padding
             const finalPadding = Math.max(padding, minPadding);
@@ -853,9 +856,19 @@ export class StatesGame {
             const viewWidth = bbox.width + (finalPadding * 2);
             const viewHeight = bbox.height + (finalPadding * 2);
             
-            // Larger minimum dimensions to ensure visibility
-            const minZoomWidth = 500; // Increased from 400
-            const minZoomHeight = 375; // Increased from 300
+            // Larger minimum dimensions to ensure visibility, but allow smaller minimums for high-zoom territories
+            let minZoomWidth = 500; // Increased from 400
+            let minZoomHeight = 375; // Increased from 300
+            
+            // For territories with high padding factors (like DC), use smaller minimums to allow the enhanced zoom to take effect
+            if (paddingFactor >= 3.0) {
+                minZoomWidth = 200; // Much smaller minimum for very high zoom factors
+                minZoomHeight = 150;
+            } else if (paddingFactor >= 1.8) {
+                minZoomWidth = 350; // Moderate reduction for high zoom factors
+                minZoomHeight = 260;
+            }
+            
             const finalViewWidth = Math.max(viewWidth, minZoomWidth);
             const finalViewHeight = Math.max(viewHeight, minZoomHeight);
             
@@ -888,6 +901,7 @@ export class StatesGame {
             
             // Create the new viewBox string
             const newViewBox = `${finalX} ${finalY} ${finalWidth} ${finalHeight}`;
+            
             
             // Animate the viewBox change with slightly longer duration
             this.animateViewBox(newViewBox, 600);
