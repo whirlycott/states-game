@@ -56,6 +56,10 @@ export class StatesGame {
         document.getElementById('select-canada')?.addEventListener('click', () => this.selectMode('canada'));
         document.getElementById('select-both')?.addEventListener('click', () => this.selectMode('both'));
 
+        // Control buttons
+        document.getElementById('sound-toggle')?.addEventListener('click', () => this.toggleSound());
+        document.getElementById('voice-toggle')?.addEventListener('click', () => this.toggleVoice());
+
         // Back to menu button
         document.getElementById('back-to-menu')?.addEventListener('click', () => this.backToMenu());
 
@@ -803,6 +807,30 @@ export class StatesGame {
         // Show mode selection
         document.getElementById('game-container')!.style.display = 'none';
         document.getElementById('mode-selection')!.style.display = 'flex';
+    }
+
+    private toggleSound(): void {
+        const soundToggleBtn = document.getElementById('sound-toggle');
+        if (!soundToggleBtn) return;
+
+        const isEnabled = this.sounds.isEnabled();
+        this.sounds.setEnabled(!isEnabled);
+        
+        // Update button appearance
+        soundToggleBtn.textContent = isEnabled ? '🔇' : '🔊';
+        soundToggleBtn.title = isEnabled ? 'Enable Sound' : 'Disable Sound';
+    }
+
+    private toggleVoice(): void {
+        const voiceToggleBtn = document.getElementById('voice-toggle');
+        if (!voiceToggleBtn) return;
+
+        const isEnabled = this.voice.isEnabled();
+        this.voice.setEnabled(!isEnabled);
+        
+        // Update button appearance  
+        voiceToggleBtn.textContent = isEnabled ? '🤐' : '🗣️';
+        voiceToggleBtn.title = isEnabled ? 'Enable Voice' : 'Disable Voice';
     }
 
     // Zoom and pan to focus on a specific state/province with smooth transition
