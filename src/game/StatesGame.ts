@@ -568,10 +568,10 @@ export class StatesGame {
                 // For group elements (like Alaska), apply to all child path elements
                 const pathElements = targetElement.querySelectorAll('path');
                 pathElements.forEach(pathEl => {
-                    (pathEl as HTMLElement).style.strokeWidth = '3';
-                    (pathEl as HTMLElement).style.stroke = 'url(#multiColorPattern)';
-                    (pathEl as HTMLElement).style.strokeDasharray = '3,3';
-                    (pathEl as HTMLElement).style.animation = 'marchingAnts 1s linear infinite';
+                    (pathEl as unknown as HTMLElement).style.strokeWidth = '3';
+                    (pathEl as unknown as HTMLElement).style.stroke = 'url(#multiColorPattern)';
+                    (pathEl as unknown as HTMLElement).style.strokeDasharray = '3,3';
+                    (pathEl as unknown as HTMLElement).style.animation = 'marchingAnts 1s linear infinite';
                 });
             } else {
                 // For individual path elements
