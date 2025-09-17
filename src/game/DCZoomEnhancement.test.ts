@@ -33,14 +33,21 @@ global.fetch = mockFetch;
 
 // Create minimal SVG structure focused on DC and comparison states
 function createMinimalSvgStructure(): string {
-  return `<svg viewBox="0 0 2289 1744">
+  return `<svg viewBox="0 0 2289 1744" xmlns="http://www.w3.org/2000/svg">
     <path id="US-DC" d="M100,100 L110,100 L110,110 L100,110 Z"/>
     <path id="US-TX" d="M100,100 L200,100 L200,200 L100,200 Z"/>
     <path id="US-AK" d="M100,100 L150,100 L150,150 L100,150 Z"/>
     <path id="US-HI" d="M100,100 L130,100 L130,130 L100,130 Z"/>
     <path id="US-CA" d="M100,100 L180,100 L180,180 L100,180 Z"/>
+    <path id="US-NY" d="M200,200 L250,200 L250,250 L200,250 Z"/>
+    <path id="US-FL" d="M300,300 L350,300 L350,350 L300,350 Z"/>
+    <path id="US-OH" d="M400,400 L450,400 L450,450 L400,450 Z"/>
+    <path id="US-PA" d="M500,500 L550,500 L550,550 L500,550 Z"/>
+    <path id="US-IL" d="M600,600 L650,600 L650,650 L600,650 Z"/>
     <path id="CA-NU" d="M300,300 L380,300 L380,380 L300,380 Z"/>
     <path id="CA-NT" d="M400,400 L470,400 L470,470 L400,470 Z"/>
+    <path id="CA-ON" d="M500,500 L570,500 L570,570 L500,570 Z"/>
+    <path id="CA-QC" d="M600,600 L670,600 L670,670 L600,670 Z"/>
   </svg>`;
 }
 
@@ -71,6 +78,9 @@ describe('Washington DC Zoom Enhancement - Core Functionality', () => {
   beforeAll(() => {
     mockSvgContent = createMinimalSvgStructure();
     mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
       text: () => Promise.resolve(mockSvgContent)
     } as Response);
   });

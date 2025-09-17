@@ -199,7 +199,10 @@ describe('Retry Integration Tests', () => {
         // Mock fetch for SVG loading
         // @ts-ignore
         global.fetch = vi.fn().mockResolvedValue({
-            text: () => Promise.resolve('<svg viewBox="0 0 2289 1744"><path id="TX" d="M1,1 L2,2 Z"/></svg>')
+            ok: true,
+            status: 200,
+            statusText: 'OK',
+            text: () => Promise.resolve('<svg viewBox="0 0 2289 1744" xmlns="http://www.w3.org/2000/svg"><path id="US-TX" d="M1,1 L2,2 Z"/><path id="US-CA" d="M1,1 L2,2 Z"/><path id="US-FL" d="M1,1 L2,2 Z"/><path id="US-NY" d="M1,1 L2,2 Z"/><path id="US-PA" d="M1,1 L2,2 Z"/><path id="US-IL" d="M1,1 L2,2 Z"/><path id="US-OH" d="M1,1 L2,2 Z"/><path id="US-MI" d="M1,1 L2,2 Z"/><path id="US-GA" d="M1,1 L2,2 Z"/><path id="US-NC" d="M1,1 L2,2 Z"/><path id="CA-ON" d="M1,1 L2,2 Z"/><path id="CA-QC" d="M1,1 L2,2 Z"/></svg>')
         });
 
         // Create game instance and wait for initialization

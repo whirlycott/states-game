@@ -39,12 +39,13 @@ function createMockSvgStructure(): string {
       return `<path id="${stateId}" d="M100,100 L200,100 L200,200 L100,200 Z"/>`;
     }
   }).join('');
-  
-  const canadianProvincesPaths = Object.keys(canadianProvinces).map(provinceId => 
+
+  const canadianProvincesPaths = Object.keys(canadianProvinces).map(provinceId =>
     `<path id="${provinceId}" d="M100,100 L200,100 L200,200 L100,200 Z"/>`
   ).join('');
-  
-  return `<svg viewBox="0 0 2289 1744">${usStatesPaths}${canadianProvincesPaths}</svg>`;
+
+  // Ensure we have enough elements to pass validation (requires at least 10 geographic elements and 10 paths)
+  return `<svg viewBox="0 0 2289 1744" xmlns="http://www.w3.org/2000/svg">${usStatesPaths}${canadianProvincesPaths}</svg>`;
 }
 
 // Set up DOM environment for testing
@@ -88,6 +89,9 @@ describe('StatesGame Coloring Functionality', () => {
   beforeAll(() => {
     mockSvgContent = createMockSvgStructure();
     mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
       text: () => Promise.resolve(mockSvgContent)
     } as Response);
   });

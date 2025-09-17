@@ -6,6 +6,8 @@ import { usStates, canadianProvinces, adjacencyMap } from './data.js';
 import { RetroSounds } from '../audio/RetroSounds.js';
 import { EdgeyVoice } from '../audio/EdgeyVoice.js';
 import { isCloseMatch, normalizeGeographicName, shouldGetRandomSecondChance } from './utils.js';
+import { sanitizeSVG, validateGeographicSVG } from '../security/svgSanitizer.js';
+import { validateHardModeInput, InputRateLimiter } from '../security/inputValidator.js';
 import mapSvg from '../assets/Usa_and_Canada_with_names_natural.svg?url';
 
 export class StatesGame {
@@ -23,6 +25,7 @@ export class StatesGame {
     private difficulty: Difficulty = 'easy';
     private hasRetried = false;  // Track if user has already used their retry for this question
     private retryType: 'close' | 'lucky' | null = null;  // Track what type of retry was given
+    private inputRateLimiter: InputRateLimiter;  // Rate limiter for text input validation
     
     // Color palette for map coloring
     private readonly colorPalette = ['#f3f9b2', '#e39bdb', '#4ca8bc', '#1d27a2', '#4768ae', '#e15c4f', '#fcffcd', '#f560e2'];
@@ -31,6 +34,7 @@ export class StatesGame {
     constructor() {
         this.sounds = new RetroSounds();
         this.voice = new EdgeyVoice();
+        this.inputRateLimiter = new InputRateLimiter(15, 60000); // Max 15 attempts per minute
         this.init();
     }
 
@@ -71,11 +75,42 @@ export class StatesGame {
 
         // Text input for hard mode
         document.getElementById('submit-answer-btn')?.addEventListener('click', () => this.submitTextAnswer());
-        document.getElementById('text-answer-input')?.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                this.submitTextAnswer();
-            }
-        });
+
+        const textInput = document.getElementById('text-answer-input') as HTMLInputElement;
+        if (textInput) {
+            // Handle Enter key for submission
+            textInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    this.submitTextAnswer();
+                }
+            });
+
+            // Real-time input validation and sanitization
+            textInput.addEventListener('input', (event) => {
+                const target = event.target as HTMLInputElement;
+                const originalValue = target.value;
+
+                // Allow only safe characters for geographic names
+                const filteredValue = originalValue.replace(/[^a-zA-Z\s\-'.]/g, '');
+
+                // Limit length
+                const truncatedValue = filteredValue.substring(0, 50);
+
+                // Update input if value was changed
+                if (truncatedValue !== originalValue) {
+                    target.value = truncatedValue;
+                    // Show brief feedback if characters were filtered
+                    if (filteredValue !== originalValue) {
+                        this.showInputError('Only letters, spaces, hyphens, apostrophes, and periods are allowed');
+                    }
+                }
+            });
+
+            // Clear error messages when user starts typing valid input
+            textInput.addEventListener('focus', () => {
+                this.clearInputError();
+            });
+        }
     }
 
     private async loadSVGMap(): Promise<void> {
@@ -84,8 +119,21 @@ export class StatesGame {
             if (!mapContainer) throw new Error('Map container not found');
 
             const response = await fetch(mapSvg);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch SVG: ${response.status} ${response.statusText}`);
+            }
+
             const svgText = await response.text();
-            mapContainer.innerHTML = svgText;
+
+            // Sanitize the SVG content to prevent XSS attacks
+            const sanitizedSvg = sanitizeSVG(svgText);
+
+            // Validate that the sanitized SVG is still a valid geographic map
+            if (!validateGeographicSVG(sanitizedSvg)) {
+                throw new Error('SVG validation failed - content may be corrupted or invalid');
+            }
+
+            mapContainer.innerHTML = sanitizedSvg;
             
             this.svgElement = mapContainer.querySelector('svg');
             if (!this.svgElement) throw new Error('SVG element not found');
@@ -456,14 +504,36 @@ export class StatesGame {
         const input = document.getElementById('text-answer-input') as HTMLInputElement;
         if (!input) return;
 
-        const userAnswer = input.value.trim();
-        if (!userAnswer) return;
+        // Check rate limiting to prevent spam/abuse
+        if (!this.inputRateLimiter.isAllowed('user-session')) {
+            this.showInputError('Too many attempts. Please wait a moment before trying again.');
+            return;
+        }
+
+        const userAnswer = input.value;
+
+        // Validate and sanitize input
+        const validationResult = validateHardModeInput(userAnswer);
+        if (!validationResult.isValid) {
+            this.showInputError(validationResult.errorMessage || 'Invalid input');
+            // Update input with sanitized version if available
+            if (validationResult.sanitizedInput !== userAnswer) {
+                input.value = validationResult.sanitizedInput;
+            }
+            return;
+        }
+
+        const sanitizedAnswer = validationResult.sanitizedInput;
+        if (!sanitizedAnswer) return;
+
+        // Clear any previous input error messages
+        this.clearInputError();
 
         const currentQuestion = this.questions[this.currentQuestion];
         const correctAnswer = currentQuestion.stateName;
 
         // Normalize both answers for comparison
-        const normalizedUser = normalizeGeographicName(userAnswer);
+        const normalizedUser = normalizeGeographicName(sanitizedAnswer);
         const normalizedCorrect = normalizeGeographicName(correctAnswer);
 
         const isCorrect = normalizedUser === normalizedCorrect;
@@ -471,40 +541,40 @@ export class StatesGame {
         if (isCorrect) {
             // Clear any retry indicators
             this.clearRetryIndicator();
-            
+
             // Disable input and submit button
             input.disabled = true;
             const submitBtn = document.getElementById('submit-answer-btn') as HTMLButtonElement;
             if (submitBtn) submitBtn.disabled = true;
 
             this.handleCorrectAnswer(currentQuestion.stateId);
-        } else if (!this.hasRetried && this.difficulty === 'hard' && 
-                  (isCloseMatch(userAnswer, correctAnswer) || shouldGetRandomSecondChance(userAnswer, correctAnswer))) {
+        } else if (!this.hasRetried && this.difficulty === 'hard' &&
+                  (isCloseMatch(sanitizedAnswer, correctAnswer) || shouldGetRandomSecondChance(sanitizedAnswer, correctAnswer))) {
             // Give the user a second chance if their answer is close OR they get lucky
             this.hasRetried = true;
-            this.retryType = isCloseMatch(userAnswer, correctAnswer) ? 'close' : 'lucky';
-            
+            this.retryType = isCloseMatch(sanitizedAnswer, correctAnswer) ? 'close' : 'lucky';
+
             // Show visual indication this is second chance
             this.showSecondChanceIndicator(this.retryType);
-            
+
             // Keep input as-is for user to modify, just refocus
             input.focus();
-            
+
             // Audio-only encouragement based on retry type
             this.voice.sayEncouragement(this.retryType);
-            
+
             // Play a gentle hint sound
             this.sounds.playHint();
         } else {
             // Clear any retry indicators
             this.clearRetryIndicator();
-            
+
             // Disable input and submit button
             input.disabled = true;
             const submitBtn = document.getElementById('submit-answer-btn') as HTMLButtonElement;
             if (submitBtn) submitBtn.disabled = true;
 
-            this.handleWrongAnswer(currentQuestion.stateId, userAnswer);
+            this.handleWrongAnswer(currentQuestion.stateId, sanitizedAnswer);
         }
     }
 
@@ -540,6 +610,31 @@ export class StatesGame {
             feedbackDiv.textContent = '';
             feedbackDiv.style.display = 'none';
             feedbackDiv.className = 'feedback-text';
+        }
+    }
+
+    private showInputError(message: string): void {
+        const feedbackDiv = document.getElementById('feedback');
+        if (feedbackDiv) {
+            feedbackDiv.textContent = message;
+            feedbackDiv.className = 'feedback-text input-error';
+            feedbackDiv.style.display = 'block';
+            feedbackDiv.style.color = '#f44336';
+        }
+
+        // Auto-clear error message after 3 seconds
+        setTimeout(() => {
+            this.clearInputError();
+        }, 3000);
+    }
+
+    private clearInputError(): void {
+        const feedbackDiv = document.getElementById('feedback');
+        if (feedbackDiv && feedbackDiv.classList.contains('input-error')) {
+            feedbackDiv.textContent = '';
+            feedbackDiv.style.display = 'none';
+            feedbackDiv.className = 'feedback-text';
+            feedbackDiv.style.color = '';
         }
     }
 
