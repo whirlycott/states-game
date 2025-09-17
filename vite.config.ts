@@ -1,4 +1,16 @@
 import { defineConfig } from 'vite'
+import { execSync } from 'child_process'
+
+function getBuildInfo() {
+  try {
+    const gitHash = execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim()
+    const timestamp = new Date().toISOString()
+    return { gitHash, timestamp }
+  } catch (error) {
+    console.warn('Could not get git info:', error)
+    return { gitHash: 'unknown', timestamp: new Date().toISOString() }
+  }
+}
 
 export default defineConfig({
   server: {
@@ -21,5 +33,15 @@ export default defineConfig({
       }
     }
   },
-  assetsInclude: ['**/*.svg']
+  assetsInclude: ['**/*.svg'],
+  plugins: [
+    {
+      name: 'inject-build-info',
+      transformIndexHtml(html) {
+        const { gitHash, timestamp } = getBuildInfo()
+        const buildComment = `<!-- Build Info: Git Hash ${gitHash}, Deployed ${timestamp} -->`
+        return html.replace('<head>', `<head>\n    ${buildComment}`)
+      }
+    }
+  ]
 })
