@@ -2,41 +2,41 @@
 
 A web-based educational game for primary school students to learn US states and Canadian provinces by their shapes.
 
-## How to Run
+## Development
 
-**Important**: This game must be run from a web server (not by double-clicking the HTML file) because it loads the SVG map via JavaScript fetch.
-
-### Option 1: Python HTTP Server (Recommended)
 ```bash
-cd states-game
-python3 -m http.server 8000
+npm install
+npm run dev        # dev server at http://localhost:8000
+npm run build      # production build
+npm run preview    # preview production build
+npm test           # run test suite
+npm run type-check # TypeScript type checking
+npm run lint       # lint check
 ```
-Then open: http://localhost:8000
-
-### Option 2: Any other local web server
-- Use Live Server extension in VS Code
-- Use `npx serve .` if you have Node.js
-- Use any other local web server
 
 ## Game Features
 
 - **Three Modes**: US States only, Canadian Provinces only, or Both
-- **Interactive Map**: States/provinces are highlighted in red
-- **Multiple Choice**: 4 answer choices per question
+- **Two Difficulty Modes**: Easy (multiple choice) and Hard (type the answer)
+- **Interactive Map**: States/provinces are highlighted for each question
+- **Audio Feedback**: Retro sound effects and voice feedback
 - **Kid-Friendly**: Bright colors, emojis, and simple interface
 - **Responsive**: Works on desktop and mobile
 
-## Files
+## Project Structure
 
-- `index.html` - Main game interface
-- `game.js` - Game logic and functionality
-- `styles.css` - Visual styling
-- `Usa_and_Canada_with_names_natural.svg` - Interactive map
-- `debug.html` - Debug page for troubleshooting
+```
+src/
+  main.ts              - Entry point
+  game/StatesGame.ts   - Game logic
+  game/data.ts         - State/province data
+  audio/               - Sound and voice feedback
+  styles/              - CSS
+index.html             - Game interface
+```
 
 ## Troubleshooting
 
 If the map doesn't display:
-1. Make sure you're using a web server (not file://)
+1. Make sure you're using a web server — run `npm run dev` rather than opening the HTML file directly
 2. Check browser console for errors
-3. Open `debug.html` to see detailed loading information
