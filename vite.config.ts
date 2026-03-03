@@ -37,7 +37,10 @@ export default defineConfig({
   plugins: [
     {
       name: 'inject-build-info',
-      transformIndexHtml(html) {
+      transformIndexHtml(html, ctx) {
+        if (ctx.bundle) {
+          return html
+        }
         const { gitHash, timestamp } = getBuildInfo()
         const buildComment = `<!-- Build Info: Git Hash ${gitHash}, Deployed ${timestamp} -->`
         return html.replace('<head>', `<head>\n    ${buildComment}`)
