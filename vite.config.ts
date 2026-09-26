@@ -13,6 +13,7 @@ function getBuildInfo() {
 }
 
 export default defineConfig({
+  base: '/states-game/',
   server: {
     port: 8000,
     headers: {
